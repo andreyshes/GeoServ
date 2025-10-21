@@ -10,7 +10,7 @@ import {
 	CardTitle,
 } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { useCompanyId } from "../layout";
+import { useCompanyId } from "../CompanyProvider";
 
 export default function ConfirmationPage() {
 	const router = useRouter();

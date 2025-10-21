@@ -1,28 +1,17 @@
-"use client";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
-import { useSearchParams } from "next/navigation";
-import { createContext, useContext } from "react";
+import type { ReactNode } from "react";
+import CompanyProvider from "@/app/booking/CompanyProvider";
 
-const CompanyContext = createContext<string | null>(null);
-
-export const useCompanyId = () => useContext(CompanyContext);
-
-export default function BookingLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
-	const params = useSearchParams();
-	const companyId = params.get("companyId");
-
+export default function BookingLayout({ children }: { children: ReactNode }) {
 	return (
-		<CompanyContext.Provider value={companyId}>
-			<div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900">
-				<main className="flex-1 flex justify-center items-center px-4 py-12">
-					<div className="w-full max-w-3xl">{children}</div>
-				</main>
-			</div>
-		</CompanyContext.Provider>
+		<div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900">
+			<main className="flex-1 flex justify-center items-center px-4 py-12">
+				<div className="w-full max-w-3xl">
+					<CompanyProvider>{children}</CompanyProvider>
+				</div>
+			</main>
+		</div>
 	);
 }

@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { toast } from "sonner";
-import { useCompanyId } from "../layout";
+import { useCompanyId } from "../CompanyProvider";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];

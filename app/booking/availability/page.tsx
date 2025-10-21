@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Stepper from "@/app/components/Stepper";
 import { CalendarDays } from "lucide-react";
-import { useCompanyId } from "../layout";
+import { useCompanyId } from "../CompanyProvider";
 
 export default function AvailabilityPage() {
 	const [days, setDays] = useState<string[]>([]);

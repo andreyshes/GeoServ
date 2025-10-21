@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import Stepper from "@/app/components/Stepper";
 import { useState } from "react";
-import { useCompanyId } from "../layout";
+import { useCompanyId } from "../CompanyProvider";
 import { Lock } from "lucide-react";
 export default function PaymentPage() {
 	const router = useRouter();

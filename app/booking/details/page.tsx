@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Stepper from "@/app/components/Stepper";
 import { motion } from "framer-motion";
 import { Briefcase, Loader2 } from "lucide-react";
-import { useCompanyId } from "../layout";
+import { useCompanyId } from "../CompanyProvider";
 import { LocalTimeDisplay } from "@/app/components/LocalTime";
 
 interface Service {
