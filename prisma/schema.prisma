@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                 String        @id @default(cuid())
+  name               String
+  domain             String?       @unique
+  logoUrl            String?
+  stripeCustomerId   String?
+  stripeAccountId    String?
+  subscriptionStatus String?
+  createdAt          DateTime      @default(now())
+  bookings           Booking[]
+  leads              Lead[]
+  services           Service[]
+  serviceAreas       ServiceArea[]
+  users              User[]
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  companyId  String
+  createdAt  DateTime @default(now())
+  authUserId String   @unique
+  updatedAt  DateTime @updatedAt
+  role       Role     @default(USER)
+  company    Company  @relation(fields: [companyId], references: [id])
+}
+
+model ServiceArea {
+  id        String               @id @default(cuid())
+  companyId String
+  name      String
+  type      ServiceAreaType
+  centerLat Float?
+  centerLng Float?
+  radiusKm  Float?
+  polygon   Json?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  company   Company              @relation(fields: [companyId], references: [id])
+  zipCodes  ServiceAreaZipCode[]
+}
+
+model ServiceAreaZipCode {
+  id            String      @id @default(cuid())
+  serviceAreaId String
+  zipCode       String
+  serviceArea   ServiceArea @relation(fields: [serviceAreaId], references: [id])
+
+  @@unique([serviceAreaId, zipCode])
+}
+
+model Booking {
+  id                      String   @id @default(cuid())
+  customerId              String
+  companyId               String
+  stripeCheckoutSessionId String?
+  serviceType             String
+  date                    DateTime
+  slot                    String
+  status                  String   @default("pending")
+  paid                    Boolean  @default(false)
+  amountCents             Int?
+  paymentId               String?
+  paymentReceiptUrl       String?
+  createdAt               DateTime @default(now())
+  addressLat              Float?
+  addressLng              Float?
+  address                 String?
+  confirmationToken        String?  @unique
+  company                 Company  @relation(fields: [companyId], references: [id])
+  customer                Customer @relation(fields: [customerId], references: [id])
+
+  @@unique([companyId, date, slot])
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String    @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  address   String
+  companyId String?
+  createdAt DateTime @default(now())
+  company   Company? @relation(fields: [companyId], references: [id])
+}
+
+model Service {
+  id           String   @id @default(cuid())
+  name         String
+  priceCents   Int?
+  companyId    String
+  createdAt    DateTime @default(now())
+  durationText String?
+  company      Company  @relation(fields: [companyId], references: [id])
+}
+
+enum ServiceAreaType {
+  ZIP
+  RADIUS
+  POLYGON
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  USER
+}
