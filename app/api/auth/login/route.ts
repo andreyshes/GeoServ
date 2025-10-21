@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 				{ status: 400 }
 			);
 		}
+
 		const cookieStore = cookies();
 		const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -59,11 +60,11 @@ export async function POST(req: Request) {
 				companyName: dbUser.company.name,
 			},
 		});
-	} catch (err: any) {
-		console.error("❌ Login error:", err);
-		return NextResponse.json(
-			{ error: err.message || "Server error during login" },
-			{ status: 500 }
-		);
+	} catch (err: unknown) {
+		const message =
+			err instanceof Error ? err.message : "Server error during login";
+		console.error("❌ Login error:", message);
+
+		return NextResponse.json({ error: message }, { status: 500 });
 	}
 }

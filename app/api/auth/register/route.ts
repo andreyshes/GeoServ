@@ -69,11 +69,12 @@ export async function POST(req: Request) {
 			companyId: company.id,
 			userId: supabaseUser.id,
 		});
-	} catch (err: any) {
-		console.error("❌ Register error:", err);
-		return NextResponse.json(
-			{ error: err.message || "Server error during registration" },
-			{ status: 500 }
-		);
+	} catch (err: unknown) {
+		const message =
+			err instanceof Error ? err.message : "Server error during registration";
+
+		console.error("❌ Register error:", message);
+
+		return NextResponse.json({ error: message }, { status: 500 });
 	}
 }
