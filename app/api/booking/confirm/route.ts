@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { sendSMS } from "@/lib/twilio"; // ✅ add this
 
 export async function GET(req: Request) {
 	try {
@@ -12,18 +13,26 @@ export async function GET(req: Request) {
 			where: { confirmationToken: token },
 			include: {
 				company: { select: { name: true, logoUrl: true, id: true } },
-				customer: { select: { firstName: true } },
+				customer: { select: { firstName: true, phone: true } },
 			},
 		});
 
 		if (!booking)
 			return NextResponse.json({ error: "Invalid token" }, { status: 404 });
 
-		// ✅ Update status in database
 		await db.booking.update({
 			where: { id: booking.id },
 			data: { status: "confirmed" },
 		});
+
+		if (booking.customer?.phone) {
+			const msg = `✅ Hi ${booking.customer.firstName}, your appointment with ${
+				booking.company.name
+			} on ${new Date(booking.date).toLocaleDateString()} at ${
+				booking.slot
+			} has been confirmed.`;
+			await sendSMS(booking.customer.phone, msg);
+		}
 
 		// ✅ Broadcast to dashboard in real-time
 		await supabaseServer.channel("booking-updates").send({
