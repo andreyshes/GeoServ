@@ -22,12 +22,10 @@ export async function POST(req: Request) {
 
 		if (event.type === "checkout.session.completed") {
 			const session = event.data.object as Stripe.Checkout.Session;
-			const bookingId =
-				session.metadata?.bookingId ||
-				new URL(session.success_url || "").searchParams.get("bookingId");
+			const bookingId = session.metadata?.bookingId;
 
 			if (!bookingId) {
-				console.warn("⚠️ No bookingId in session metadata");
+				console.warn("⚠️ Missing bookingId in session metadata.");
 				return NextResponse.json({ received: true });
 			}
 
@@ -36,13 +34,10 @@ export async function POST(req: Request) {
 				{ expand: ["latest_charge"] }
 			);
 
-			let receiptUrl;
-			if (
-				paymentIntent.latest_charge &&
+			const receiptUrl =
 				typeof paymentIntent.latest_charge !== "string"
-			) {
-				receiptUrl = paymentIntent.latest_charge.receipt_url;
-			}
+					? paymentIntent.latest_charge?.receipt_url
+					: null;
 
 			const booking = await db.booking.update({
 				where: { id: bookingId },
@@ -69,11 +64,13 @@ export async function POST(req: Request) {
 					receiptUrl: booking.paymentReceiptUrl || undefined,
 				}),
 			});
+
+			console.log(`✅ Booking ${bookingId} marked paid and confirmed.`);
 		}
 
 		return NextResponse.json({ received: true });
 	} catch (err: any) {
-		console.error("⚠️ Webhook error:", err);
+		console.error("⚠️ Webhook error:", err.message);
 		return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
 	}
 }
