@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { supabaseServer } from "@/lib/supabaseServer";
-import { sendSMS } from "@/lib/twilio"; // ✅ add this
+import { sendSMS } from "@/lib/twilio";
+import { Resend } from "resend";
+import BookingConfirmationEmail from "@/app/emails/BookingConfirmationEmail";
+
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function GET(req: Request) {
 	try {
@@ -13,18 +17,23 @@ export async function GET(req: Request) {
 			where: { confirmationToken: token },
 			include: {
 				company: { select: { name: true, logoUrl: true, id: true } },
-				customer: { select: { firstName: true, phone: true } },
+				customer: {
+					select: { firstName: true, lastName: true, email: true, phone: true },
+				},
 			},
 		});
 
 		if (!booking)
 			return NextResponse.json({ error: "Invalid token" }, { status: 404 });
 
-		await db.booking.update({
+		// ✅ Mark booking confirmed
+		const updatedBooking = await db.booking.update({
 			where: { id: booking.id },
 			data: { status: "confirmed" },
+			include: { customer: true, company: true },
 		});
 
+		// ✅ Send SMS confirmation (if phone exists)
 		if (booking.customer?.phone) {
 			const msg = `✅ Hi ${booking.customer.firstName}, your appointment with ${
 				booking.company.name
@@ -34,7 +43,25 @@ export async function GET(req: Request) {
 			await sendSMS(booking.customer.phone, msg);
 		}
 
-		// ✅ Broadcast to dashboard in real-time
+		// ✅ Send confirmation email (Pay on Arrival)
+		if (booking.customer?.email) {
+			await resend.emails.send({
+				from: "GeoServ <notify@geoserv.org>",
+				to: booking.customer.email,
+				subject: `Your ${booking.company?.name || "GeoServ"} Booking Confirmation`,
+				react: BookingConfirmationEmail({
+					name: booking.customer.firstName,
+					company: booking.company?.name || "GeoServ",
+					service: booking.serviceType,
+					date: booking.date.toLocaleString(),
+					slot: booking.slot,
+					ref: booking.id,
+				}),
+			});
+			console.log(`📧 Confirmation email sent to ${booking.customer.email}`);
+		}
+
+		// ✅ Broadcast real-time update
 		await supabaseServer.channel("booking-updates").send({
 			type: "broadcast",
 			event: "booking-updated",
@@ -116,10 +143,16 @@ export async function GET(req: Request) {
 		</head>
 		<body>
 			<div class="container">
-				${booking.company?.logoUrl ? `<img src="${booking.company.logoUrl}" class="logo" alt="${booking.company.name} logo" />` : ""}
+				${
+					booking.company?.logoUrl
+						? `<img src="${booking.company.logoUrl}" class="logo" alt="${booking.company.name} logo" />`
+						: ""
+				}
 				<h1>✅ Appointment Confirmed</h1>
 				<p>Thank you, <strong>${booking.customer.firstName}</strong>!</p>
-				<p>Your appointment with <strong>${booking.company?.name ?? "our team"}</strong> has been successfully confirmed.</p>
+				<p>Your appointment with <strong>${
+					booking.company?.name ?? "our team"
+				}</strong> has been successfully confirmed.</p>
 
 				<div class="details">
 					<p><strong>Service:</strong> ${booking.serviceType}</p>
