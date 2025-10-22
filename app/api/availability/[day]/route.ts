@@ -8,7 +8,6 @@ export async function POST(
 	context: { params: Promise<{ day: string }> }
 ) {
 	try {
-		// ✅ Await params
 		const { day } = await context.params;
 
 		const { companyId } = await req.json();

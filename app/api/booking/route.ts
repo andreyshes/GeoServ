@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
 import BookingConfirmationEmail from "@/app/emails/BookingConfirmationEmail";
+import { getCoordinates } from "@/lib/geo"; // make sure this exists
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -32,6 +33,22 @@ function isValidCoordinates(loc: any): loc is { lat: number; lng: number } {
 	);
 }
 
+/** Haversine distance in km */
+function haversineDistance(
+	p1: { lat: number; lng: number },
+	p2: { lat: number; lng: number }
+) {
+	const R = 6371; // km
+	const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
+	const dLng = ((p2.lng - p1.lng) * Math.PI) / 180;
+	const a =
+		Math.sin(dLat / 2) ** 2 +
+		Math.cos((p1.lat * Math.PI) / 180) *
+			Math.cos((p2.lat * Math.PI) / 180) *
+			Math.sin(dLng / 2) ** 2;
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export async function POST(req: Request) {
 	try {
 		const data = await req.json();
@@ -48,8 +65,10 @@ export async function POST(req: Request) {
 			location,
 			paymentMethod,
 		} = data;
+
 		console.log("📦 Incoming booking data:", data);
 
+		// ✅ 1. Basic validation
 		if (!companyId || !date || !slot || !serviceType || !email) {
 			return NextResponse.json(
 				{ error: "Missing required fields" },
@@ -57,6 +76,7 @@ export async function POST(req: Request) {
 			);
 		}
 
+		// ✅ 2. Prevent double booking
 		const bookingDate = new Date(date);
 		bookingDate.setMinutes(
 			bookingDate.getMinutes() - bookingDate.getTimezoneOffset()
@@ -72,10 +92,7 @@ export async function POST(req: Request) {
 			);
 		}
 
-		const service = await db.service.findFirst({
-			where: { name: serviceType, companyId },
-		});
-
+		// ✅ 3. Resolve coordinates & address
 		let address: string | null = rawAddress ?? null;
 		let lat: number | null = null;
 		let lng: number | null = null;
@@ -87,7 +104,54 @@ export async function POST(req: Request) {
 		} else if (isValidCoordinates(location)) {
 			lat = location.lat;
 			lng = location.lng;
+		} else if (address && !lat && !lng) {
+			// fallback: geocode the address
+			const coords = await getCoordinates(address);
+			if (coords) {
+				lat = coords.lat;
+				lng = coords.lng;
+			}
 		}
+
+		if (!lat || !lng) {
+			return NextResponse.json(
+				{ error: "Unable to determine coordinates for address" },
+				{ status: 400 }
+			);
+		}
+
+		// ✅ 4. Service area enforcement (RADIUS check)
+		const serviceArea = await db.serviceArea.findFirst({
+			where: { companyId },
+		});
+
+		if (
+			serviceArea?.centerLat &&
+			serviceArea?.centerLng &&
+			serviceArea?.radiusKm
+		) {
+			const distance = haversineDistance(
+				{ lat, lng },
+				{ lat: serviceArea.centerLat, lng: serviceArea.centerLng }
+			);
+
+			if (distance > serviceArea.radiusKm) {
+				console.warn(
+					`❌ Address (${lat},${lng}) is outside company radius (${distance.toFixed(
+						2
+					)} km > ${serviceArea.radiusKm} km)`
+				);
+				return NextResponse.json(
+					{ error: "Address outside of service area", distanceKm: distance },
+					{ status: 400 }
+				);
+			}
+		}
+
+		// ✅ 5. Proceed with booking
+		const service = await db.service.findFirst({
+			where: { name: serviceType, companyId },
+		});
 
 		const booking = await db.booking.create({
 			data: {
@@ -112,6 +176,7 @@ export async function POST(req: Request) {
 			include: { customer: true, company: true },
 		});
 
+		// ✅ 6. Handle “pay on arrival” bookings + send confirmation email
 		if (paymentMethod === "arrival") {
 			await db.booking.update({
 				where: { id: booking.id },
@@ -133,13 +198,11 @@ export async function POST(req: Request) {
 								day: "numeric",
 								year: "numeric",
 							}),
-
 							slot: booking.slot,
 							ref: booking.id,
 							receiptUrl: undefined,
 						}),
 					});
-
 					console.log(
 						`📧 Confirmation email sent to ${booking.customer.email}`
 					);

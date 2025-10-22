@@ -19,7 +19,6 @@ async function getBookedDays(companyId: string) {
 	);
 }
 
-// ✅ POST — used by your app normally
 export async function POST(req: Request) {
 	try {
 		const { companyId } = await req.json();
@@ -37,7 +36,6 @@ export async function POST(req: Request) {
 	}
 }
 
-// ✅ GET — for testing in browser or if you ever want to fetch via query params
 export async function GET(req: Request) {
 	try {
 		const { searchParams } = new URL(req.url);

@@ -21,7 +21,6 @@ export default function LoginPage() {
 				body: JSON.stringify({ email, password }),
 			});
 
-			// Defensive: handle non-JSON responses gracefully
 			let data: any;
 			try {
 				data = await res.json();
@@ -38,13 +37,19 @@ export default function LoginPage() {
 				return;
 			}
 
-			// Store minimal session data for quick client access
-			sessionStorage.setItem("companyId", data.user.companyId);
-			sessionStorage.setItem("userEmail", data.user.email);
-			sessionStorage.setItem("userRole", data.user.role);
+			await new Promise<void>((resolve) => {
+				sessionStorage.setItem("companyId", data.user.companyId);
+				sessionStorage.setItem("userEmail", data.user.email);
+				sessionStorage.setItem("userRole", data.user.role);
+				requestAnimationFrame(() => resolve());
+			});
+			console.log("✅ Stored company info:", {
+				companyId: data.user.companyId,
+				email: data.user.email,
+				role: data.user.role,
+			});
 
-			// Wait briefly so the Supabase cookie set by the server is ready
-			await new Promise((resolve) => setTimeout(resolve, 300));
+			await new Promise((resolve) => setTimeout(resolve, 150));
 
 			router.push("/dashboard");
 		} catch (err) {

@@ -760,6 +760,27 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 					</TableBody>
 				</Table>
 			</div>
+			{/* SERVICE AREA CARD */}
+			<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 mt-12">
+				<div className="flex items-center justify-between">
+					<div>
+						<h2 className="font-semibold text-gray-800 flex items-center gap-2">
+							<TrendingUp className="w-4 h-4 text-blue-500" />
+							Service Area
+						</h2>
+						<p className="text-sm text-gray-500 mt-1">
+							Define the radius or area where your company provides services.
+						</p>
+					</div>
+
+					<Button
+						onClick={() => (window.location.href = "/dashboard/service-area")}
+						className="bg-blue-600 hover:bg-blue-700 text-white"
+					>
+						Manage Service Area
+					</Button>
+				</div>
+			</div>
 		</div>
 	);
 }

@@ -1,4 +1,3 @@
-// app/api/validate-address/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCoordinates } from "@/lib/geo";
@@ -39,7 +38,6 @@ export async function POST(req: Request) {
 				}
 				case "POLYGON": {
 					if (area.polygon) {
-						// Force-parse if polygon is a string
 						const polygonData =
 							typeof area.polygon === "string"
 								? JSON.parse(area.polygon)
@@ -83,7 +81,6 @@ export async function POST(req: Request) {
 	}
 }
 
-// ✅ Helper: Haversine distance in km
 function haversineDistance(
 	p1: { lat: number; lng: number },
 	p2: { lat: number; lng: number }
@@ -100,7 +97,6 @@ function haversineDistance(
 	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ✅ Point-in-Polygon helper
 function pointInPolygon(point: [number, number], vs: [number, number][]) {
 	const [x, y] = point;
 	let inside = false;
@@ -114,9 +110,8 @@ function pointInPolygon(point: [number, number], vs: [number, number][]) {
 	return inside;
 }
 
-// ✅ Reverse lookup ZIP (optional)
 async function reverseLookupZip(lat: number, lng: number) {
-	const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
+	const apiKey = process.env.GOOGLE_MAPS_API_KEY!;
 	const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
 	const res = await fetch(url);
 	const data = await res.json();
