@@ -31,7 +31,6 @@ export default function CalendarPage() {
 	const [slots, setSlots] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 
-	// 🔹 Fetch available slots when date changes
 	useEffect(() => {
 		if (!(date instanceof Date) || !companyId) return;
 

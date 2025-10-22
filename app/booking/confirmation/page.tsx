@@ -17,44 +17,32 @@ export default function ConfirmationPage() {
 	const searchParams = useSearchParams();
 	const companyId = useCompanyId();
 
-	const sessionId = searchParams.get("session_id");
-	const bookingIdParam = searchParams.get("bookingId");
+	const bookingId = searchParams.get("bookingId");
 	const paidParam = searchParams.get("paid") === "true";
 
-	const [bookingId, setBookingId] = useState<string | null>(bookingIdParam);
 	const [booking, setBooking] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		async function resolveBooking() {
-			if (bookingIdParam) return;
-			if (!sessionId) return;
-
-			try {
-				const res = await fetch(`/api/booking/by-session/${sessionId}`);
-				if (!res.ok) throw new Error("Failed to resolve booking from session.");
-				const data = await res.json();
-				if (data?.id) setBookingId(data.id);
-			} catch (err) {
-				console.error("❌ Failed to resolve booking:", err);
-			}
-		}
-		resolveBooking();
-	}, [sessionId, bookingIdParam]);
-
-	useEffect(() => {
 		async function fetchBooking() {
-			if (!bookingId) return;
+			if (!bookingId) {
+				console.warn("⚠️ No bookingId found in URL");
+				setLoading(false);
+				return;
+			}
+
 			try {
 				const res = await fetch(`/api/booking/${bookingId}`);
 				const data = await res.json();
-				setBooking(data);
+				console.log("📦 Booking data:", data);
+				setBooking(data.booking || data);
 			} catch (err) {
-				console.error("Failed to fetch booking:", err);
+				console.error("❌ Failed to fetch booking:", err);
 			} finally {
 				setLoading(false);
 			}
 		}
+
 		fetchBooking();
 	}, [bookingId]);
 
@@ -106,10 +94,8 @@ export default function ConfirmationPage() {
 					</p>
 					<p>
 						<strong>Date:</strong>{" "}
-						{new Date(booking.date).toLocaleString(undefined, {
+						{new Date(booking.date).toLocaleDateString(undefined, {
 							dateStyle: "medium",
-							timeStyle: "short",
-							timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 						})}
 					</p>
 					<p>
@@ -125,6 +111,7 @@ export default function ConfirmationPage() {
 							{booking.paid || paidParam ? "Paid" : "Pending Payment"}
 						</span>
 					</p>
+
 					{booking.paymentReceiptUrl && (
 						<div className="pt-6">
 							<a

@@ -41,20 +41,27 @@ export default function PaymentPage() {
 		}
 	}
 
-	function handlePayOnArrival() {
-		const bookingData = sessionStorage.getItem("bookingDetails");
-		if (!bookingData) return alert("Booking details missing.");
+	async function handlePayOnArrival() {
+		try {
+			setLoading(true);
+			const bookingData = sessionStorage.getItem("bookingDetails");
+			if (!bookingData) throw new Error("Booking details missing.");
 
-		const booking = JSON.parse(bookingData);
-		const query = new URLSearchParams({
-			paid: "false",
-			bookingId: booking.id,
-			firstName: booking.firstName,
-			lastName: booking.lastName,
-		});
-		if (companyId) query.append("companyId", companyId);
+			const booking = JSON.parse(bookingData);
 
-		router.push(`/booking/confirmation?${query.toString()}`);
+			const query = new URLSearchParams({
+				paid: "false",
+				bookingId: booking.id,
+			});
+
+			if (companyId) query.append("companyId", companyId);
+
+			router.push(`/booking/confirmation?${query.toString()}`);
+		} catch (err: any) {
+			alert(err.message || "Something went wrong.");
+			console.error("❌ Pay on Arrival error:", err);
+			setLoading(false);
+		}
 	}
 
 	return (

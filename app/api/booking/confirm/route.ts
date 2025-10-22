@@ -26,7 +26,6 @@ export async function GET(req: Request) {
 		if (!booking)
 			return NextResponse.json({ error: "Invalid token" }, { status: 404 });
 
-		// ✅ Mark booking confirmed
 		const updatedBooking = await db.booking.update({
 			where: { id: booking.id },
 			data: { status: "confirmed" },
@@ -43,7 +42,6 @@ export async function GET(req: Request) {
 			await sendSMS(booking.customer.phone, msg);
 		}
 
-		// ✅ Send confirmation email (Pay on Arrival)
 		if (booking.customer?.email) {
 			await resend.emails.send({
 				from: "GeoServ <notify@geoserv.org>",
@@ -61,7 +59,6 @@ export async function GET(req: Request) {
 			console.log(`📧 Confirmation email sent to ${booking.customer.email}`);
 		}
 
-		// ✅ Broadcast real-time update
 		await supabaseServer.channel("booking-updates").send({
 			type: "broadcast",
 			event: "booking-updated",
@@ -72,7 +69,6 @@ export async function GET(req: Request) {
 			},
 		});
 
-		// ✅ Pretty HTML confirmation response
 		const html = `
 		<!DOCTYPE html>
 		<html lang="en">

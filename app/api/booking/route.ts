@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { Resend } from "resend";
+import BookingConfirmationEmail from "@/app/emails/BookingConfirmationEmail";
+
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 async function getAddressFromCoords(lat: number, lng: number): Promise<string> {
 	try {
 		const res = await fetch(
 			`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
 			{
-				headers: {
-					"User-Agent": "GeoServ/1.0 (support@geoserv.org)",
-				},
+				headers: { "User-Agent": "GeoServ/1.0 (support@geoserv.org)" },
 			}
 		);
 		const data = await res.json();
@@ -44,7 +46,9 @@ export async function POST(req: Request) {
 			phone,
 			address: rawAddress,
 			location,
+			paymentMethod,
 		} = data;
+		console.log("📦 Incoming booking data:", data);
 
 		if (!companyId || !date || !slot || !serviceType || !email) {
 			return NextResponse.json(
@@ -54,12 +58,9 @@ export async function POST(req: Request) {
 		}
 
 		const bookingDate = new Date(date);
-		if (isNaN(bookingDate.getTime())) {
-			return NextResponse.json(
-				{ error: "Invalid date format" },
-				{ status: 400 }
-			);
-		}
+		bookingDate.setMinutes(
+			bookingDate.getMinutes() - bookingDate.getTimezoneOffset()
+		);
 
 		const existing = await db.booking.findFirst({
 			where: { companyId, date: bookingDate, slot },
@@ -110,6 +111,43 @@ export async function POST(req: Request) {
 			},
 			include: { customer: true, company: true },
 		});
+
+		if (paymentMethod === "arrival") {
+			await db.booking.update({
+				where: { id: booking.id },
+				data: { status: "confirmed" },
+			});
+
+			if (booking.customer?.email) {
+				try {
+					await resend.emails.send({
+						from: "GeoServ <notify@geoserv.org>",
+						to: booking.customer.email,
+						subject: `Your ${booking.company?.name || "GeoServ"} Booking Confirmation`,
+						react: BookingConfirmationEmail({
+							name: booking.customer.firstName,
+							company: booking.company?.name || "GeoServ",
+							service: booking.serviceType,
+							date: new Date(booking.date).toLocaleDateString(undefined, {
+								month: "long",
+								day: "numeric",
+								year: "numeric",
+							}),
+
+							slot: booking.slot,
+							ref: booking.id,
+							receiptUrl: undefined,
+						}),
+					});
+
+					console.log(
+						`📧 Confirmation email sent to ${booking.customer.email}`
+					);
+				} catch (emailErr) {
+					console.error("⚠️ Failed to send confirmation email:", emailErr);
+				}
+			}
+		}
 
 		return NextResponse.json({ success: true, booking });
 	} catch (err: any) {

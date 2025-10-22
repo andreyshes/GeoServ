@@ -19,7 +19,7 @@ export async function GET(
 			return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 		}
 
-		return NextResponse.json(booking);
+		return NextResponse.json({ booking });
 	} catch (err: any) {
 		console.error("❌ Error fetching booking:", err);
 		return NextResponse.json({ error: err.message }, { status: 500 });

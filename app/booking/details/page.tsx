@@ -138,6 +138,7 @@ export default function DetailsPage() {
 				lat: validated.lat || null,
 				lng: validated.lng || null,
 			},
+			paymentMethod: "arrival",
 		};
 
 		try {
