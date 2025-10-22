@@ -1,13 +1,28 @@
 {
+	"headers": [
+		{
+			"source": "/(.*)",
+			"headers": [
+				{
+					"key": "X-Frame-Options",
+					"value": "ALLOWALL"
+				},
+				{
+					"key": "Content-Security-Policy",
+					"value": "frame-ancestors *;"
+				}
+			]
+		}
+	],
 	"crons": [
 		{
 			"path": "/api/cron/reminders",
-			"schedule": "0 7 * * *"
+			"schedule": "0 14 * * *"
 		}
 	],
-  "build": {
-	"env": {
-	  "NEXT_IGNORE_ESLINT": "true"
+	"build": {
+		"env": {
+			"NEXT_IGNORE_ESLINT": "true"
+		}
 	}
-  }
 }

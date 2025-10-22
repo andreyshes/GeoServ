@@ -73,11 +73,10 @@ interface Service {
 }
 
 export default function DashboardClient({ companyId }: DashboardClientProps) {
-	const fixedCompanyId = "cmh0u1fw60000v7rljmh32ebp";
 	const [bookings, setBookings] = useState<Booking[]>([]);
 	const [page, setPage] = useState(1);
 	const [total, setTotal] = useState(0);
-	const limit = 10; // rows per page
+	const limit = 10;
 	const [services, setServices] = useState<Service[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -99,7 +98,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 		try {
 			setLoading(true);
 			const res = await fetch(
-				`/api/company/${fixedCompanyId}/booking?page=${page}&limit=${limit}`
+				`/api/company/${companyId}/booking?page=${page}&limit=${limit}`
 			);
 			if (!res.ok) throw new Error("Failed to load bookings");
 
@@ -115,7 +114,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 
 	async function fetchServices() {
 		try {
-			const res = await fetch(`/api/company/${fixedCompanyId}/services`);
+			const res = await fetch(`/api/company/${companyId}/services`);
 			const data = await res.json();
 			setServices(data.services || []);
 		} catch (err) {
@@ -125,7 +124,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 
 	async function addService() {
 		if (!newService.name.trim()) return;
-		await fetch(`/api/company/${fixedCompanyId}/services`, {
+		await fetch(`/api/company/${companyId}/services`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -141,7 +140,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 	async function deleteService(serviceId: string) {
 		try {
 			const res = await fetch(
-				`/api/company/${fixedCompanyId}/services/${serviceId}`,
+				`/api/company/${companyId}/services/${serviceId}`,
 				{
 					method: "DELETE",
 				}
@@ -159,7 +158,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 		setIsSaving(true);
 		try {
 			const res = await fetch(
-				`/api/company/${fixedCompanyId}/services/${editingService.id}`,
+				`/api/company/${companyId}/services/${editingService.id}`,
 				{
 					method: "PATCH",
 					headers: { "Content-Type": "application/json" },
@@ -188,7 +187,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 	) => {
 		try {
 			const res = await fetch(
-				`/api/company/${fixedCompanyId}/booking/${bookingId}`,
+				`/api/company/${companyId}/booking/${bookingId}`,
 				{
 					method: "PATCH",
 					headers: { "Content-Type": "application/json" },
@@ -206,7 +205,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 	};
 
 	useEffect(() => {
-		if (!fixedCompanyId) return;
+		if (!companyId) return;
 
 		fetchBookings();
 		fetchServices();
@@ -230,7 +229,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 				},
 				(payload) => {
 					const record = (payload.new || payload.old) as BookingChange;
-					if (record.companyId === fixedCompanyId) {
+					if (record.companyId === companyId) {
 						clearTimeout((window as any).__fetchTimeout);
 						(window as any).__fetchTimeout = setTimeout(fetchBookings, 400);
 					}
@@ -239,7 +238,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 			.subscribe();
 
 		channel.on("broadcast", { event: "booking-updated" }, (payload) => {
-			if (payload?.companyId === fixedCompanyId) {
+			if (payload?.companyId === companyId) {
 				fetchBookings();
 				toast.success(
 					`Booking ${payload.status === "confirmed" ? "confirmed" : "canceled"}!`
@@ -250,7 +249,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 		return () => {
 			supabase.removeChannel(channel);
 		};
-	}, [fixedCompanyId, page]);
+	}, [companyId, page]);
 
 	if (loading)
 		return (
@@ -307,7 +306,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 						const res = await fetch("/api/stripe/connect", {
 							method: "POST",
 							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({ companyId: fixedCompanyId }),
+							body: JSON.stringify({ companyId: companyId }),
 						});
 						const data = await res.json();
 						if (data.url) {
