@@ -9,7 +9,6 @@ export async function GET(
 		const { companyId } = await context.params;
 		const { searchParams } = new URL(request.url);
 
-		// Pagination
 		const page = parseInt(searchParams.get("page") || "1");
 		const limit = parseInt(searchParams.get("limit") || "10");
 		const skip = (page - 1) * limit;

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -22,31 +21,47 @@ export default function LoginPage() {
 				body: JSON.stringify({ email, password }),
 			});
 
-			const data = await res.json();
-			setLoading(false);
-
-			if (!res.ok || !data.success) {
-				alert(data.error || "Invalid email or password");
+			// Defensive: handle non-JSON responses gracefully
+			let data: any;
+			try {
+				data = await res.json();
+			} catch {
+				console.error("Unexpected non-JSON response:", await res.text());
+				alert("Server error — please try again.");
+				setLoading(false);
 				return;
 			}
 
+			if (!res.ok || !data.success) {
+				alert(data.error || "Invalid email or password");
+				setLoading(false);
+				return;
+			}
+
+			// Store minimal session data for quick client access
 			sessionStorage.setItem("companyId", data.user.companyId);
 			sessionStorage.setItem("userEmail", data.user.email);
 			sessionStorage.setItem("userRole", data.user.role);
 
+			// Wait briefly so the Supabase cookie set by the server is ready
+			await new Promise((resolve) => setTimeout(resolve, 300));
+
 			router.push("/dashboard");
-		} catch (err: any) {
+		} catch (err) {
 			console.error("❌ Login failed:", err);
 			alert("Something went wrong. Please try again.");
+		} finally {
 			setLoading(false);
 		}
 	}
 
 	return (
 		<div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 text-white">
+			{/* Glow blobs */}
 			<div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-neutral-700/20 blur-[150px] rounded-full" />
 			<div className="absolute bottom-[-20rem] right-[-10rem] w-[600px] h-[600px] bg-neutral-600/10 blur-[160px] rounded-full" />
 
+			{/* Card */}
 			<div className="relative z-10 w-[90%] max-w-md bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgb(0_0_0_/_0.4)] p-10">
 				<div className="text-center mb-8">
 					<h1 className="text-3xl font-semibold tracking-tight text-white">
@@ -61,7 +76,7 @@ export default function LoginPage() {
 					<div>
 						<label className="block text-sm text-neutral-300 mb-1">Email</label>
 						<input
-							type="user-email"
+							type="email"
 							required
 							className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/40 focus:border-transparent transition"
 							placeholder="you@company.com"
@@ -79,7 +94,7 @@ export default function LoginPage() {
 							required
 							className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/40 focus:border-transparent transition"
 							placeholder="••••••••"
-							autoComplete="new-password"
+							autoComplete="current-password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
 						/>
@@ -107,7 +122,6 @@ export default function LoginPage() {
 				</div>
 			</div>
 
-			{/* Soft bottom gradient for depth */}
 			<div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 		</div>
 	);
