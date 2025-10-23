@@ -10,7 +10,7 @@ datasource db {
 model Company {
   id                 String        @id @default(cuid())
   name               String
-  domain             String?       @unique
+  domain             String?
   logoUrl            String?
   stripeCustomerId   String?
   stripeAccountId    String?
@@ -76,7 +76,7 @@ model Booking {
   addressLat              Float?
   addressLng              Float?
   address                 String?
-  confirmationToken        String?  @unique
+  confirmationToken       String?  @unique
   company                 Company  @relation(fields: [companyId], references: [id])
   customer                Customer @relation(fields: [customerId], references: [id])
 

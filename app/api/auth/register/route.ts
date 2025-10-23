@@ -16,7 +16,6 @@ export async function POST(req: Request) {
 		const origin = req.headers.get("origin") || "";
 		const hostname = new URL(origin).hostname || "geoserv.org";
 
-		// ✅ Always create a new company instead of reusing the same one
 		const uniqueDomain = `${companyName.toLowerCase().replace(/\s+/g, "-")}.${hostname}`;
 
 		const company = await db.company.create({
