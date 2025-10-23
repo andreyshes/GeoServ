@@ -6,8 +6,10 @@ import { db } from "@/lib/db";
 export async function POST(req: Request) {
 	try {
 		const { email, password } = await req.json();
+		console.log("📥 Login attempt:", email);
 
 		if (!email || !password) {
+			console.warn("⚠️ Missing login credentials");
 			return NextResponse.json(
 				{ error: "Missing email or password" },
 				{ status: 400 }
@@ -16,38 +18,44 @@ export async function POST(req: Request) {
 
 		const cookieStore = cookies();
 		const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email,
 			password,
 		});
 
 		if (error || !data.user) {
-			console.error("❌ Supabase login error:", error?.message);
+			console.error("❌ Invalid login:", error?.message);
 			return NextResponse.json(
 				{ error: "Invalid email or password" },
 				{ status: 401 }
 			);
 		}
 
-		const user = data.user;
+		console.log("✅ Authenticated user:", data.user.id);
 
 		const dbUser =
 			(await db.user.findUnique({
-				where: { authUserId: user.id },
+				where: { authUserId: data.user.id },
 				include: { company: true },
 			})) ||
 			(await db.user.findUnique({
-				where: { email: user.email! },
+				where: { email: data.user.email! },
 				include: { company: true },
 			}));
 
 		if (!dbUser || !dbUser.company) {
+			console.warn("⚠️ User not linked to a company:", email);
 			return NextResponse.json(
 				{ error: "User not linked to a company" },
 				{ status: 404 }
 			);
 		}
+
+		console.log("🏢 Login success:", {
+			userEmail: dbUser.email,
+			companyName: dbUser.company.name,
+			companyId: dbUser.companyId,
+		});
 
 		return NextResponse.json({
 			success: true,
@@ -63,8 +71,7 @@ export async function POST(req: Request) {
 	} catch (err: unknown) {
 		const message =
 			err instanceof Error ? err.message : "Server error during login";
-		console.error("❌ Login error:", message);
-
+		console.error("❌ Login route crashed:", message);
 		return NextResponse.json({ error: message }, { status: 500 });
 	}
 }
