@@ -15,8 +15,9 @@ export async function POST(req: Request) {
 
 		const origin = req.headers.get("origin") || "";
 		const hostname = new URL(origin).hostname || "geoserv.org";
-
-		const uniqueDomain = `${companyName.toLowerCase().replace(/\s+/g, "-")}.${hostname}`;
+		const uniqueDomain = `${companyName
+			.toLowerCase()
+			.replace(/\s+/g, "-")}.${hostname}`;
 
 		const company = await db.company.create({
 			data: {
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
 			},
 		});
 
+		// ✅ Create the admin user in Supabase Auth
 		const supabaseAdmin = createClient(
 			process.env.NEXT_PUBLIC_SUPABASE_URL!,
 			process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -50,6 +52,7 @@ export async function POST(req: Request) {
 		const supabaseUser = data.user;
 		if (!supabaseUser) throw new Error("Failed to create Supabase user.");
 
+		// ✅ Link the user to the new company
 		await db.user.create({
 			data: {
 				authUserId: supabaseUser.id,
