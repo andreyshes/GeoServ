@@ -14,14 +14,15 @@ export async function POST(req: Request) {
 		}
 
 		const origin = req.headers.get("origin") || "";
-		const hostname = new URL(origin).hostname || "localhost";
+		const hostname = new URL(origin).hostname || "geoserv.org";
 
-		const company = await db.company.upsert({
-			where: { domain: hostname },
-			update: {},
-			create: {
+		// ✅ Always create a new company instead of reusing the same one
+		const uniqueDomain = `${companyName.toLowerCase().replace(/\s+/g, "-")}.${hostname}`;
+
+		const company = await db.company.create({
+			data: {
 				name: companyName,
-				domain: hostname,
+				domain: uniqueDomain,
 				logoUrl: `https://placehold.co/200x50?text=${encodeURIComponent(companyName)}`,
 				subscriptionStatus: "active",
 			},
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
 		});
 
 		console.log(`✅ Company created: ${company.name}`);
+		console.log(`🆔 Company ID: ${company.id}`);
 		console.log(`👤 Admin user: ${email}`);
 
 		return NextResponse.json({
@@ -72,7 +74,6 @@ export async function POST(req: Request) {
 	} catch (err: unknown) {
 		const message =
 			err instanceof Error ? err.message : "Server error during registration";
-
 		console.error("❌ Register error:", message);
 
 		return NextResponse.json({ error: message }, { status: 500 });
