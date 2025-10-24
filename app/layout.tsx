@@ -1,3 +1,5 @@
+"use client";
+
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "./components/Navbar";
@@ -20,19 +22,17 @@ export default function RootLayout({
 
 	return (
 		<html lang="en">
-			<body className="bg-gray-50 text-gray-900">
+			<body className={isEmbed ? "bg-white" : "bg-gray-50 text-gray-900"}>
 				{!isEmbed && <Navbar />}
-
 				<main
 					className={
 						isEmbed
-							? "min-h-screen bg-white"
+							? "min-h-screen flex justify-center items-center"
 							: "min-h-screen container mx-auto px-4"
 					}
 				>
 					{children}
 				</main>
-
 				{!isEmbed && <Footer />}
 				<Toaster richColors position="top-center" />
 			</body>
