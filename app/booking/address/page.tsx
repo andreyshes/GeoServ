@@ -1,4 +1,5 @@
 "use client";
+
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,12 @@ import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { useCompanyId } from "../CompanyProvider";
 
-export default function AddressPage() {
+interface AddressPageProps {
+	companyId?: string; // passed from iframe or BookingFlow
+}
+
+export default function AddressPage({ companyId }: AddressPageProps) {
+	// ✅ Local state
 	const [address, setAddress] = useState("");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [error, setError] = useState<string | undefined>(undefined);
@@ -23,18 +29,24 @@ export default function AddressPage() {
 	const [notifyLoading, setNotifyLoading] = useState(false);
 	const [notifyError, setNotifyError] = useState<string | null>(null);
 	const router = useRouter();
-	const companyId = useCompanyId();
 
+	// ✅ Get fallback companyId from context if not passed via props
+	const contextCompanyId = useCompanyId();
+	const effectiveCompanyId = companyId || contextCompanyId;
+
+	// ✅ Handle submit
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(undefined);
 
 		try {
-			if (companyId) {
-				router.push(`/booking/availability?companyId=${companyId}`);
+			if (effectiveCompanyId) {
+				// Go straight to availability if companyId known
+				router.push(`/booking/availability?companyId=${effectiveCompanyId}`);
 				return;
 			}
 
+			// Otherwise validate address and find company dynamically
 			const res = await fetch("/api/validate-address", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -65,6 +77,7 @@ export default function AddressPage() {
 		}
 	}
 
+	// ✅ Handle Google autocomplete suggestions
 	async function handleInput(value: string) {
 		setAddress(value);
 		if (value.length < 3) {
@@ -88,6 +101,7 @@ export default function AddressPage() {
 		}
 	}
 
+	// ✅ Notify when out of service area
 	async function handleNotify(e: React.FormEvent) {
 		e.preventDefault();
 		setNotifyLoading(true);
@@ -101,7 +115,6 @@ export default function AddressPage() {
 			});
 
 			const data = await res.json();
-
 			if (!res.ok) throw new Error(data.error || "Failed to send email");
 
 			setSubmitted(true);
@@ -113,6 +126,7 @@ export default function AddressPage() {
 		}
 	}
 
+	// ✅ UI
 	return (
 		<div className="container max-w-xl mx-auto mt-12">
 			<Stepper step={0} />
@@ -161,7 +175,7 @@ export default function AddressPage() {
 								size="lg"
 								className="w-full bg-gray-200 hover:bg-blue-500 hover:text-white"
 							>
-								{companyId ? "Continue" : "Check Address"}
+								{effectiveCompanyId ? "Continue" : "Check Address"}
 							</Button>
 						</form>
 					)}
@@ -182,7 +196,6 @@ export default function AddressPage() {
 									onChange={(e) => setEmail(e.target.value)}
 									required
 								/>
-
 								<Button
 									type="submit"
 									disabled={notifyLoading}

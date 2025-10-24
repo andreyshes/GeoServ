@@ -12,10 +12,17 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { useCompanyId } from "../CompanyProvider";
 
-export default function ConfirmationPage() {
+interface ConfirmationPageProps {
+	companyId?: string;
+}
+
+export default function ConfirmationPage({ companyId }: ConfirmationPageProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const companyId = useCompanyId();
+	const contextCompanyId = useCompanyId();
+
+	// ✅ prefer prop over context
+	const effectiveCompanyId = companyId || contextCompanyId;
 
 	const bookingId = searchParams.get("bookingId");
 	const paidParam = searchParams.get("paid") === "true";
@@ -62,7 +69,12 @@ export default function ConfirmationPage() {
 				<Button
 					variant="outline"
 					className="mt-4"
-					onClick={() => router.push("/")}
+					onClick={() => {
+						const homeUrl = effectiveCompanyId
+							? `/embed/${effectiveCompanyId}`
+							: "/";
+						router.push(homeUrl);
+					}}
 				>
 					Back to Home
 				</Button>
@@ -132,8 +144,10 @@ export default function ConfirmationPage() {
 				variant="outline"
 				className="mt-10"
 				onClick={() => {
-					const url = companyId ? `/?companyId=${companyId}` : "/";
-					router.push(url);
+					const homeUrl = effectiveCompanyId
+						? `/embed/${effectiveCompanyId}`
+						: "/";
+					router.push(homeUrl);
 				}}
 			>
 				Back to Home

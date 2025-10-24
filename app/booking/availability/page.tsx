@@ -6,12 +6,18 @@ import Stepper from "@/app/components/Stepper";
 import { CalendarDays } from "lucide-react";
 import { useCompanyId } from "../CompanyProvider";
 
-export default function AvailabilityPage() {
+interface AvailabilityPageProps {
+	companyId?: string;
+}
+
+export default function AvailabilityPage({ companyId }: AvailabilityPageProps) {
 	const [days, setDays] = useState<string[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const router = useRouter();
-	const companyId = useCompanyId();
+
+	const contextCompanyId = useCompanyId();
+	const effectiveCompanyId = companyId || contextCompanyId;
 
 	useEffect(() => {
 		async function fetchAvailability() {
@@ -19,7 +25,7 @@ export default function AvailabilityPage() {
 				setLoading(true);
 				setError(null);
 
-				if (!companyId) {
+				if (!effectiveCompanyId) {
 					setError("Missing company data.");
 					setLoading(false);
 					return;
@@ -28,7 +34,7 @@ export default function AvailabilityPage() {
 				const res = await fetch("/api/availability", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ companyId }),
+					body: JSON.stringify({ companyId: effectiveCompanyId }),
 				});
 
 				const data = await res.json();
@@ -45,7 +51,7 @@ export default function AvailabilityPage() {
 		}
 
 		fetchAvailability();
-	}, [companyId]);
+	}, [effectiveCompanyId]);
 
 	if (loading)
 		return (
@@ -79,7 +85,7 @@ export default function AvailabilityPage() {
 							onClick={() =>
 								router.push(
 									`/booking/calendar?day=${encodeURIComponent(day)}${
-										companyId ? `&companyId=${companyId}` : ""
+										effectiveCompanyId ? `&companyId=${effectiveCompanyId}` : ""
 									}`
 								)
 							}

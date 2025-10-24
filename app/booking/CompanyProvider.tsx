@@ -7,17 +7,20 @@ const CompanyContext = createContext<string | null>(null);
 
 export const useCompanyId = () => useContext(CompanyContext);
 
+interface CompanyProviderProps {
+	children: React.ReactNode;
+	companyId?: string;
+}
+
 export default function CompanyProvider({
 	children,
-}: {
-	children: React.ReactNode;
-}) {
+	companyId,
+}: CompanyProviderProps) {
 	const params = useSearchParams();
-	const companyId = params.get("companyId");
+	const paramCompanyId = params.get("companyId");
+	const value = companyId || paramCompanyId;
 
 	return (
-		<CompanyContext.Provider value={companyId}>
-			{children}
-		</CompanyContext.Provider>
+		<CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
 	);
 }

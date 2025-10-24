@@ -5,10 +5,18 @@ import Stepper from "@/app/components/Stepper";
 import { useState } from "react";
 import { useCompanyId } from "../CompanyProvider";
 import { Lock } from "lucide-react";
-export default function PaymentPage() {
+
+interface PaymentPageProps {
+	companyId?: string;
+}
+
+export default function PaymentPage({ companyId }: PaymentPageProps) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const companyId = useCompanyId();
+	const contextCompanyId = useCompanyId();
+
+	// ✅ Use prop first (embed), fallback to context (internal)
+	const effectiveCompanyId = companyId || contextCompanyId;
 
 	async function handlePayNow() {
 		try {
@@ -24,7 +32,7 @@ export default function PaymentPage() {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					bookingId: booking.id,
-					companyId,
+					companyId: effectiveCompanyId,
 				}),
 			});
 
@@ -54,7 +62,7 @@ export default function PaymentPage() {
 				bookingId: booking.id,
 			});
 
-			if (companyId) query.append("companyId", companyId);
+			if (effectiveCompanyId) query.append("companyId", effectiveCompanyId);
 
 			router.push(`/booking/confirmation?${query.toString()}`);
 		} catch (err: any) {
@@ -94,7 +102,8 @@ export default function PaymentPage() {
 
 				<button
 					onClick={handlePayOnArrival}
-					className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all border border-gray-300"
+					disabled={loading}
+					className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all border border-gray-300 disabled:opacity-70"
 				>
 					Pay on Arrival
 				</button>

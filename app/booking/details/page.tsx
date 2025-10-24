@@ -20,7 +20,11 @@ interface ServicesResponse {
 	error?: string;
 }
 
-export default function DetailsPage() {
+interface DetailsPageProps {
+	companyId?: string;
+}
+
+export default function DetailsPage({ companyId }: DetailsPageProps) {
 	const [form, setForm] = useState({
 		first: "",
 		last: "",
@@ -34,18 +38,21 @@ export default function DetailsPage() {
 
 	const router = useRouter();
 	const params = useSearchParams();
-	const companyId = useCompanyId();
+	const contextCompanyId = useCompanyId();
+
+	// ✅ prefer prop over context
+	const effectiveCompanyId = companyId || contextCompanyId;
 
 	const day = params.get("day");
 	const slot = params.get("slot");
 
 	useEffect(() => {
-		if (!companyId) return;
+		if (!effectiveCompanyId) return;
 		let isMounted = true;
 
 		async function fetchServices() {
 			try {
-				const res = await fetch(`/api/company/${companyId}/services`);
+				const res = await fetch(`/api/company/${effectiveCompanyId}/services`);
 				if (!res.ok) throw new Error(`Failed to fetch services: ${res.status}`);
 				const data: ServicesResponse = await res.json();
 
@@ -68,7 +75,7 @@ export default function DetailsPage() {
 		return () => {
 			isMounted = false;
 		};
-	}, [companyId]);
+	}, [effectiveCompanyId]);
 
 	function handleChange(
 		e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -89,7 +96,7 @@ export default function DetailsPage() {
 		if (/pm/i.test(period) && hour < 12) hour += 12;
 		if (/am/i.test(period) && hour === 12) hour = 0;
 
-		const local = new Date(
+		return new Date(
 			baseDate.getFullYear(),
 			baseDate.getMonth(),
 			baseDate.getDate(),
@@ -98,12 +105,11 @@ export default function DetailsPage() {
 			0,
 			0
 		);
-		return local;
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!companyId || !day || !slot) {
+		if (!effectiveCompanyId || !day || !slot) {
 			alert("Missing booking details—cannot complete booking.");
 			return;
 		}
@@ -132,7 +138,7 @@ export default function DetailsPage() {
 			serviceType: form.service,
 			date: dateTime,
 			slot,
-			companyId,
+			companyId: effectiveCompanyId,
 			address: validated.address || null,
 			location: {
 				lat: validated.lat || null,
@@ -153,7 +159,7 @@ export default function DetailsPage() {
 				throw new Error(data.error || "Failed to create booking");
 
 			sessionStorage.setItem("bookingDetails", JSON.stringify(data.booking));
-			router.push(`/booking/payment?companyId=${companyId}`);
+			router.push(`/booking/payment?companyId=${effectiveCompanyId}`);
 		} catch (err: any) {
 			alert(err.message || "Something went wrong while creating the booking.");
 		}
@@ -246,8 +252,7 @@ export default function DetailsPage() {
 						<option value="">Choose a service</option>
 						{services.map((s) => (
 							<option key={s.id} value={s.name}>
-								{s.name} — ${(s.priceCents / 100).toFixed(2)} ( {s.durationText}{" "}
-								)
+								{s.name} — ${(s.priceCents / 100).toFixed(2)} ({s.durationText})
 							</option>
 						))}
 					</motion.select>

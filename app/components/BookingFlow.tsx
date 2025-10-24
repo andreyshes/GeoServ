@@ -8,6 +8,8 @@ import PaymentPage from "@/app/booking/payment/page";
 import ConfirmationPage from "@/app/booking/confirmation/page";
 import { useSearchParams } from "next/navigation";
 
+
+
 export default function BookingFlow({ companyId }: { companyId: string }) {
 	const searchParams = useSearchParams();
 	const step = searchParams.get("step") || "address";
@@ -15,19 +17,19 @@ export default function BookingFlow({ companyId }: { companyId: string }) {
 	const renderStep = () => {
 		switch (step) {
 			case "address":
-				return <AddressPage />;
+				return <AddressPage companyId={companyId} />;
 			case "availability":
-				return <AvailabilityPage />;
+				return <AvailabilityPage companyId={companyId} />;
 			case "calendar":
-				return <CalendarPage />;
+				return <CalendarPage companyId={companyId} />;
 			case "details":
-				return <DetailsPage />;
+				return <DetailsPage companyId={companyId} />;
 			case "payment":
-				return <PaymentPage />;
+				return <PaymentPage companyId={companyId} />;
 			case "confirmation":
-				return <ConfirmationPage />;
+				return <ConfirmationPage companyId={companyId} />;
 			default:
-				return <AddressPage />;
+				return <AddressPage companyId={companyId} />;
 		}
 	};
 

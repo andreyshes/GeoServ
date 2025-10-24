@@ -1,4 +1,5 @@
 import BookingFlow from "@/app/components/BookingFlow";
+import CompanyProvider from "@/app/booking/CompanyProvider";
 
 export default function EmbedBookingPage({
 	params,
@@ -6,8 +7,12 @@ export default function EmbedBookingPage({
 	params: { companyId: string };
 }) {
 	return (
-		<div className="min-h-screen bg-white flex justify-center items-center p-4">
-			<BookingFlow companyId={params.companyId} />
+		<div className="min-h-screen flex justify-center items-center bg-white p-4">
+			<CompanyProvider companyId={params.companyId}>
+				<div className="w-full max-w-3xl">
+					<BookingFlow companyId={params.companyId} />
+				</div>
+			</CompanyProvider>
 		</div>
 	);
 }

@@ -16,12 +16,18 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const ALL_SLOTS = ["7–9", "9–11", "11–1", "1–3", "3–5"];
 
-export default function CalendarPage() {
+interface CalendarPageProps {
+	companyId?: string;
+}
+
+export default function CalendarPage({ companyId }: CalendarPageProps) {
 	const router = useRouter();
 	const params = useSearchParams();
-	const companyId = useCompanyId();
-	const selectedDay = params.get("day");
+	const contextCompanyId = useCompanyId();
 
+	const effectiveCompanyId = companyId || contextCompanyId;
+
+	const selectedDay = params.get("day");
 	const initialDate =
 		selectedDay && !isNaN(Date.parse(selectedDay))
 			? new Date(selectedDay)
@@ -31,8 +37,9 @@ export default function CalendarPage() {
 	const [slots, setSlots] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 
+	// ✅ Fetch available slots for the selected day + company
 	useEffect(() => {
-		if (!(date instanceof Date) || !companyId) return;
+		if (!(date instanceof Date) || !effectiveCompanyId) return;
 
 		const fetchSlots = async () => {
 			setLoading(true);
@@ -43,7 +50,7 @@ export default function CalendarPage() {
 					{
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ companyId }),
+						body: JSON.stringify({ companyId: effectiveCompanyId }),
 						cache: "no-store",
 					}
 				);
@@ -67,22 +74,23 @@ export default function CalendarPage() {
 		};
 
 		fetchSlots();
-	}, [date, companyId]);
+	}, [date, effectiveCompanyId]);
 
+	// ✅ Handle slot selection + navigation to next step
 	async function handleSlotSelect(slot: string) {
-		if (!(date instanceof Date) || !companyId) return;
+		if (!(date instanceof Date) || !effectiveCompanyId) return;
 
-		// Double check slot is still available before proceeding
 		const formattedDay = date.toISOString().split("T")[0];
 		const res = await fetch(
 			`/api/availability/${encodeURIComponent(formattedDay)}`,
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ companyId }),
+				body: JSON.stringify({ companyId: effectiveCompanyId }),
 				cache: "no-store",
 			}
 		);
+
 		const data = await res.json();
 
 		if (!data.availableSlots?.includes(slot)) {
@@ -94,7 +102,7 @@ export default function CalendarPage() {
 		const query = new URLSearchParams({
 			day: date.toDateString(),
 			slot,
-			companyId,
+			companyId: effectiveCompanyId,
 		});
 
 		router.push(`/booking/details?${query.toString()}`);
