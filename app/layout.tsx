@@ -1,13 +1,7 @@
-"use client";
-
-import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
 import { Toaster } from "sonner";
-import { usePathname } from "next/navigation";
-
-export const metadata: Metadata = {
+import NavWrapper from "@/app/NavWrapper";
+export const metadata = {
 	title: "GeoServ",
 	description: "Smart booking for service businesses",
 };
@@ -17,24 +11,13 @@ export default function RootLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const pathname = usePathname();
-	const isEmbed = pathname.startsWith("/embed");
-
 	return (
 		<html lang="en">
-			<body className={isEmbed ? "bg-white" : "bg-gray-50 text-gray-900"}>
-				{!isEmbed && <Navbar />}
-				<main
-					className={
-						isEmbed
-							? "min-h-screen flex justify-center items-center"
-							: "min-h-screen container mx-auto px-4"
-					}
-				>
+			<body className="bg-gray-50 text-gray-900">
+				<NavWrapper>
 					{children}
-				</main>
-				{!isEmbed && <Footer />}
-				<Toaster richColors position="top-center" />
+					<Toaster richColors position="top-center" />
+				</NavWrapper>
 			</body>
 		</html>
 	);
