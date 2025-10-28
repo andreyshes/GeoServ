@@ -17,9 +17,12 @@ import { useCompanyId } from "../CompanyProvider";
 
 interface AddressPageProps {
 	companyId?: string; // passed from iframe or BookingFlow
+	embedded?: boolean;
 }
 
-export default function AddressPage({ companyId }: AddressPageProps) {
+export default function AddressPage(
+	{ companyId, embedded = false }: AddressPageProps = {}
+) {
 	// ✅ Local state
 	const [address, setAddress] = useState("");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -33,6 +36,8 @@ export default function AddressPage({ companyId }: AddressPageProps) {
 	// ✅ Get fallback companyId from context if not passed via props
 	const contextCompanyId = useCompanyId();
 	const effectiveCompanyId = companyId || contextCompanyId;
+	const embedPath =
+		embedded && effectiveCompanyId ? `/embed/${effectiveCompanyId}` : null;
 
 	// ✅ Handle submit
 	async function handleSubmit(e: React.FormEvent) {
@@ -42,7 +47,11 @@ export default function AddressPage({ companyId }: AddressPageProps) {
 		try {
 			if (effectiveCompanyId) {
 				// Go straight to availability if companyId known
-				router.push(`/booking/availability?companyId=${effectiveCompanyId}`);
+				if (embedded && embedPath) {
+					router.push(`${embedPath}?step=availability`);
+				} else {
+					router.push(`/booking/availability?companyId=${effectiveCompanyId}`);
+				}
 				return;
 			}
 
@@ -65,7 +74,11 @@ export default function AddressPage({ companyId }: AddressPageProps) {
 						lng: data.location.lng,
 					})
 				);
-				router.push(`/booking/availability?companyId=${data.company.id}`);
+				if (embedded) {
+					router.push(`/embed/${data.company.id}?step=availability`);
+				} else {
+					router.push(`/booking/availability?companyId=${data.company.id}`);
+				}
 			} else {
 				setError(
 					data.reason || "Sorry, we currently don't service that area yet."

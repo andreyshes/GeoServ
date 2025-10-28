@@ -22,9 +22,12 @@ interface ServicesResponse {
 
 interface DetailsPageProps {
 	companyId?: string;
+	embedded?: boolean;
 }
 
-export default function DetailsPage({ companyId }: DetailsPageProps) {
+export default function DetailsPage(
+	{ companyId, embedded = false }: DetailsPageProps = {}
+) {
 	const [form, setForm] = useState({
 		first: "",
 		last: "",
@@ -159,7 +162,14 @@ export default function DetailsPage({ companyId }: DetailsPageProps) {
 				throw new Error(data.error || "Failed to create booking");
 
 			sessionStorage.setItem("bookingDetails", JSON.stringify(data.booking));
-			router.push(`/booking/payment?companyId=${effectiveCompanyId}`);
+			if (embedded) {
+				const target = effectiveCompanyId
+					? `/embed/${effectiveCompanyId}?step=payment`
+					: `?step=payment`;
+				router.push(target);
+			} else {
+				router.push(`/booking/payment?companyId=${effectiveCompanyId}`);
+			}
 		} catch (err: any) {
 			alert(err.message || "Something went wrong while creating the booking.");
 		}

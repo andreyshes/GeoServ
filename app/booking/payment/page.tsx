@@ -8,9 +8,12 @@ import { Lock } from "lucide-react";
 
 interface PaymentPageProps {
 	companyId?: string;
+	embedded?: boolean;
 }
 
-export default function PaymentPage({ companyId }: PaymentPageProps) {
+export default function PaymentPage(
+	{ companyId, embedded = false }: PaymentPageProps = {}
+) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const contextCompanyId = useCompanyId();
@@ -62,9 +65,16 @@ export default function PaymentPage({ companyId }: PaymentPageProps) {
 				bookingId: booking.id,
 			});
 
-			if (effectiveCompanyId) query.append("companyId", effectiveCompanyId);
-
-			router.push(`/booking/confirmation?${query.toString()}`);
+			if (embedded) {
+				query.set("step", "confirmation");
+				const target = effectiveCompanyId
+					? `/embed/${effectiveCompanyId}?${query.toString()}`
+					: `?${query.toString()}`;
+				router.push(target);
+			} else {
+				if (effectiveCompanyId) query.append("companyId", effectiveCompanyId);
+				router.push(`/booking/confirmation?${query.toString()}`);
+			}
 		} catch (err: any) {
 			alert(err.message || "Something went wrong.");
 			console.error("❌ Pay on Arrival error:", err);

@@ -14,9 +14,12 @@ import { useCompanyId } from "../CompanyProvider";
 
 interface ConfirmationPageProps {
 	companyId?: string;
+	embedded?: boolean;
 }
 
-export default function ConfirmationPage({ companyId }: ConfirmationPageProps) {
+export default function ConfirmationPage(
+	{ companyId, embedded = false }: ConfirmationPageProps = {}
+) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const contextCompanyId = useCompanyId();
@@ -70,9 +73,10 @@ export default function ConfirmationPage({ companyId }: ConfirmationPageProps) {
 					variant="outline"
 					className="mt-4"
 					onClick={() => {
-						const homeUrl = effectiveCompanyId
-							? `/embed/${effectiveCompanyId}`
-							: "/";
+						const homeUrl =
+							embedded && effectiveCompanyId
+								? `/embed/${effectiveCompanyId}`
+								: "/";
 						router.push(homeUrl);
 					}}
 				>
@@ -144,9 +148,10 @@ export default function ConfirmationPage({ companyId }: ConfirmationPageProps) {
 				variant="outline"
 				className="mt-10"
 				onClick={() => {
-					const homeUrl = effectiveCompanyId
-						? `/embed/${effectiveCompanyId}`
-						: "/";
+					const homeUrl =
+						embedded && effectiveCompanyId
+							? `/embed/${effectiveCompanyId}`
+							: "/";
 					router.push(homeUrl);
 				}}
 			>

@@ -18,9 +18,12 @@ const ALL_SLOTS = ["7–9", "9–11", "11–1", "1–3", "3–5"];
 
 interface CalendarPageProps {
 	companyId?: string;
+	embedded?: boolean;
 }
 
-export default function CalendarPage({ companyId }: CalendarPageProps) {
+export default function CalendarPage(
+	{ companyId, embedded = false }: CalendarPageProps = {}
+) {
 	const router = useRouter();
 	const params = useSearchParams();
 	const contextCompanyId = useCompanyId();
@@ -102,10 +105,20 @@ export default function CalendarPage({ companyId }: CalendarPageProps) {
 		const query = new URLSearchParams({
 			day: date.toDateString(),
 			slot,
-			companyId: effectiveCompanyId,
 		});
 
-		router.push(`/booking/details?${query.toString()}`);
+		if (embedded) {
+			query.set("step", "details");
+			const target = effectiveCompanyId
+				? `/embed/${effectiveCompanyId}?${query.toString()}`
+				: `?${query.toString()}`;
+			router.push(target);
+		} else {
+			if (effectiveCompanyId) {
+				query.set("companyId", effectiveCompanyId);
+			}
+			router.push(`/booking/details?${query.toString()}`);
+		}
 	}
 
 	return (

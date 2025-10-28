@@ -8,9 +8,12 @@ import { useCompanyId } from "../CompanyProvider";
 
 interface AvailabilityPageProps {
 	companyId?: string;
+	embedded?: boolean;
 }
 
-export default function AvailabilityPage({ companyId }: AvailabilityPageProps) {
+export default function AvailabilityPage(
+	{ companyId, embedded = false }: AvailabilityPageProps = {}
+) {
 	const [days, setDays] = useState<string[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -82,13 +85,23 @@ export default function AvailabilityPage({ companyId }: AvailabilityPageProps) {
 					{days.map((day, index) => (
 						<button
 							key={index}
-							onClick={() =>
-								router.push(
-									`/booking/calendar?day=${encodeURIComponent(day)}${
-										effectiveCompanyId ? `&companyId=${effectiveCompanyId}` : ""
-									}`
-								)
-							}
+							onClick={() => {
+								const query = new URLSearchParams();
+								query.set("day", day);
+
+								if (embedded) {
+									query.set("step", "calendar");
+									const target = effectiveCompanyId
+										? `/embed/${effectiveCompanyId}?${query.toString()}`
+										: `?${query.toString()}`;
+									router.push(target);
+								} else {
+									if (effectiveCompanyId) {
+										query.set("companyId", effectiveCompanyId);
+									}
+									router.push(`/booking/calendar?${query.toString()}`);
+								}
+							}}
 							className="group flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-blue-400 transition-all duration-200"
 						>
 							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 group-hover:bg-blue-100">
