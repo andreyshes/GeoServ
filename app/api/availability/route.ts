@@ -6,17 +6,17 @@ const ALL_SLOTS = ["7–9", "9–11", "11–1", "1–3", "3–5"];
 
 export async function POST(req: Request) {
 	try {
-		const { companyId } = await req.json();
+		const { companyId, daysAhead = 90 } = await req.json();
 
 		if (!companyId) {
 			return NextResponse.json({ error: "Missing companyId" }, { status: 400 });
 		}
 
 		const today = startOfDay(new Date());
-		const twoWeeksLater = addDays(today, 14);
+		const futureDate = addDays(today, daysAhead);
 
 		const bookings = await db.booking.findMany({
-			where: { companyId, date: { gte: today, lt: twoWeeksLater } },
+			where: { companyId, date: { gte: today, lt: futureDate } },
 			select: { date: true, slot: true },
 		});
 
@@ -27,21 +27,18 @@ export async function POST(req: Request) {
 			bookedByDate[key].push(b.slot);
 		}
 
-		const availability = Array.from({ length: 14 }, (_, i) => {
+		const availability = Array.from({ length: daysAhead }, (_, i) => {
 			const day = addDays(today, i);
 			const key = day.toDateString();
 			const booked = bookedByDate[key] || [];
 			const openSlots = ALL_SLOTS.filter((slot) => !booked.includes(slot));
-			return openSlots.length > 0 ? { date: key, slots: openSlots } : null;
-		}).filter(Boolean) as { date: string; slots: string[] }[];
+			return { date: key, slots: openSlots, bookedSlots: booked };
+		});
 
 		return NextResponse.json({
-			availableDays: availability.map((d) => d.date),
 			availability,
-			message:
-				availability.length > 0
-					? "Available dates generated successfully."
-					: "No available days in the next two weeks.",
+			availableDays: availability.map((d) => d.date),
+			message: "Availability generated successfully.",
 		});
 	} catch (err) {
 		console.error("❌ /api/availability error:", err);

@@ -13,10 +13,12 @@ async function main() {
 	// -------------------------------
 	// 🏢 Company A - CleanPro
 	// -------------------------------
+	const companyACustomId = "company-cleanpro";
 	const companyA = await db.company.upsert({
-		where: { domain: "cleanpro.com" },
+		where: { id: companyACustomId },
 		update: {},
 		create: {
+			id: companyACustomId,
 			name: "CleanPro Services",
 			domain: "cleanpro.com",
 			logoUrl: "https://placehold.co/200x50?text=CleanPro",
@@ -142,10 +144,12 @@ async function main() {
 	// -------------------------------
 	// 🔧 Company B - HandyHome
 	// -------------------------------
+	const companyBCustomId = "company-handyhome";
 	const companyB = await db.company.upsert({
-		where: { domain: "handyhome.com" },
+		where: { id: companyBCustomId },
 		update: {},
 		create: {
+			id: companyBCustomId,
 			name: "HandyHome Repairs",
 			domain: "handyhome.com",
 			logoUrl: "https://placehold.co/200x50?text=HandyHome",

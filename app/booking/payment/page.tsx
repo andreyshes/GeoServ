@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Stepper from "@/app/components/Stepper";
+import BookingProgress from "@/app/components/BookingProgress";
 import { useState } from "react";
 import { useCompanyId } from "../CompanyProvider";
 import { Lock } from "lucide-react";
@@ -11,14 +11,14 @@ interface PaymentPageProps {
 	embedded?: boolean;
 }
 
-export default function PaymentPage(
-	{ companyId, embedded = false }: PaymentPageProps = {}
-) {
+export default function PaymentPage({
+	companyId,
+	embedded = false,
+}: PaymentPageProps = {}) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const contextCompanyId = useCompanyId();
 
-	// ✅ Use prop first (embed), fallback to context (internal)
 	const effectiveCompanyId = companyId || contextCompanyId;
 
 	async function handlePayNow() {
@@ -84,7 +84,7 @@ export default function PaymentPage(
 
 	return (
 		<div className="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl border border-gray-100">
-			<Stepper step={4} />
+			<BookingProgress currentStep="payment" />
 
 			<h2 className="text-3xl font-semibold mb-6 text-center bg-gradient-to-r from-neutral-900 via-gray-700 to-gray-500 dark:from-gray-100 dark:via-gray-300 dark:to-gray-100 bg-clip-text text-transparent">
 				Complete Your Booking

@@ -16,8 +16,8 @@ jest.mock("@/app/booking/layout", () => ({
 	useCompanyId: jest.fn(() => "company-xyz"),
 }));
 
-jest.mock("@/app/components/Stepper", () => () => (
-	<div data-testid="stepper" />
+jest.mock("@/app/components/BookingProgress", () => () => (
+	<div data-testid="booking-progress" />
 ));
 
 jest.mock("@/app/components/LocalTime", () => ({

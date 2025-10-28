@@ -11,20 +11,21 @@ import {
 } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { useCompanyId } from "../CompanyProvider";
+import BookingProgress from "@/app/components/BookingProgress";
 
 interface ConfirmationPageProps {
 	companyId?: string;
 	embedded?: boolean;
 }
 
-export default function ConfirmationPage(
-	{ companyId, embedded = false }: ConfirmationPageProps = {}
-) {
+export default function ConfirmationPage({
+	companyId,
+	embedded = false,
+}: ConfirmationPageProps = {}) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const contextCompanyId = useCompanyId();
 
-	// ✅ prefer prop over context
 	const effectiveCompanyId = companyId || contextCompanyId;
 
 	const bookingId = searchParams.get("bookingId");

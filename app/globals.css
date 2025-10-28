@@ -64,6 +64,24 @@
 		--ring: 240 4.9% 83.9%;
 	}
 
+	.calendar-modern {
+		font-family: "Inter", system-ui, sans-serif;
+		width: 100%;
+		padding: 1rem;
+	}
+
+	.calendar-modern .react-calendar__tile {
+		aspect-ratio: 1 / 1;
+	}
+
+	.calendar-modern .react-calendar__tile--now {
+		background: none !important;
+	}
+
+	.calendar-modern .react-calendar__month-view__days__day--neighboringMonth {
+		color: #d1d5db;
+	}
+
 	* {
 		border-color: hsl(var(--border));
 	}

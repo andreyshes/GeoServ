@@ -89,7 +89,13 @@ export default function BookingConfirmationEmail({
 							<strong>Service:</strong> {service}
 						</Text>
 						<Text>
-							<strong>Date:</strong> {date}
+							<strong>Date:</strong>{" "}
+							{new Date(date).toLocaleDateString(undefined, {
+								weekday: "long",
+								month: "long",
+								day: "numeric",
+								year: "numeric",
+							})}
 						</Text>
 						<Text>
 							<strong>Time Slot:</strong> {slot}

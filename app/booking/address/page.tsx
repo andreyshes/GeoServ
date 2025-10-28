@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Stepper from "@/app/components/Stepper";
+import BookingProgress from "@/app/components/BookingProgress";
 import {
 	Card,
 	CardHeader,
@@ -16,13 +16,14 @@ import { Button } from "@/app/components/ui/button";
 import { useCompanyId } from "../CompanyProvider";
 
 interface AddressPageProps {
-	companyId?: string; // passed from iframe or BookingFlow
+	companyId?: string;
 	embedded?: boolean;
 }
 
-export default function AddressPage(
-	{ companyId, embedded = false }: AddressPageProps = {}
-) {
+export default function AddressPage({
+	companyId,
+	embedded = false,
+}: AddressPageProps = {}) {
 	// ✅ Local state
 	const [address, setAddress] = useState("");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -48,7 +49,7 @@ export default function AddressPage(
 			if (effectiveCompanyId) {
 				// Go straight to availability if companyId known
 				if (embedded && embedPath) {
-					router.push(`${embedPath}?step=availability`);
+					router.push(`${embedPath}?step=schedule`);
 				} else {
 					router.push(`/booking/availability?companyId=${effectiveCompanyId}`);
 				}
@@ -75,7 +76,7 @@ export default function AddressPage(
 					})
 				);
 				if (embedded) {
-					router.push(`/embed/${data.company.id}?step=availability`);
+					router.push(`/embed/${data.company.id}?step=schedule`);
 				} else {
 					router.push(`/booking/availability?companyId=${data.company.id}`);
 				}
@@ -142,7 +143,7 @@ export default function AddressPage(
 	// ✅ UI
 	return (
 		<div className="container max-w-xl mx-auto mt-12">
-			<Stepper step={0} />
+			<BookingProgress currentStep="address" />
 
 			<Card className="shadow-xl border border-border">
 				<CardHeader>

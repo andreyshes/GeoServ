@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Stepper from "@/app/components/Stepper";
+import BookingProgress from "@/app/components/BookingProgress";
 import { motion } from "framer-motion";
 import { Briefcase, Loader2 } from "lucide-react";
 import { useCompanyId } from "../CompanyProvider";
@@ -25,9 +25,10 @@ interface DetailsPageProps {
 	embedded?: boolean;
 }
 
-export default function DetailsPage(
-	{ companyId, embedded = false }: DetailsPageProps = {}
-) {
+export default function DetailsPage({
+	companyId,
+	embedded = false,
+}: DetailsPageProps = {}) {
 	const [form, setForm] = useState({
 		first: "",
 		last: "",
@@ -147,7 +148,7 @@ export default function DetailsPage(
 				lat: validated.lat || null,
 				lng: validated.lng || null,
 			},
-			paymentMethod: "arrival",
+			paymentMethod: "stripe",
 		};
 
 		try {
@@ -195,7 +196,7 @@ export default function DetailsPage(
 			onSubmit={handleSubmit}
 			className="max-w-2xl mx-auto mt-12 px-6 py-8 bg-white/80 backdrop-blur-md border border-gray-200 shadow-lg rounded-2xl"
 		>
-			<Stepper step={3} />
+			<BookingProgress currentStep="details" />
 
 			<div className="text-center mb-6">
 				<h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-400 bg-clip-text text-transparent">
