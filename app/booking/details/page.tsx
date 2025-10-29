@@ -39,17 +39,38 @@ export default function DetailsPage({
 	const [services, setServices] = useState<Service[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [validatedAddress, setValidatedAddress] = useState<{
+		address: string;
+		lat: number;
+		lng: number;
+	} | null>(null);
 
 	const router = useRouter();
 	const params = useSearchParams();
 	const contextCompanyId = useCompanyId();
-
-	// ✅ prefer prop over context
 	const effectiveCompanyId = companyId || contextCompanyId;
 
 	const day = params.get("day");
 	const slot = params.get("slot");
 
+	// ✅ Load validated address from sessionStorage
+	useEffect(() => {
+		const saved = sessionStorage.getItem("validatedAddress");
+		if (!saved) {
+			alert("Please enter your address before continuing.");
+			router.push("/booking/address");
+			return;
+		}
+
+		try {
+			setValidatedAddress(JSON.parse(saved));
+		} catch (err) {
+			console.error("❌ Failed to parse validatedAddress:", err);
+			router.push("/booking/address");
+		}
+	}, [router]);
+
+	// ✅ Fetch services for the company
 	useEffect(() => {
 		if (!effectiveCompanyId) return;
 		let isMounted = true;
@@ -96,7 +117,6 @@ export default function DetailsPage({
 		const minute = m ? parseInt(m, 10) : 0;
 
 		if (!period) period = "AM";
-
 		if (/pm/i.test(period) && hour < 12) hour += 12;
 		if (/am/i.test(period) && hour === 12) hour = 0;
 
@@ -113,8 +133,15 @@ export default function DetailsPage({
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
+
 		if (!effectiveCompanyId || !day || !slot) {
-			alert("Missing booking details—cannot complete booking.");
+			alert("Missing booking details — cannot complete booking.");
+			return;
+		}
+
+		if (!validatedAddress) {
+			alert("Please enter a valid address before booking.");
+			router.push("/booking/address");
 			return;
 		}
 
@@ -122,17 +149,12 @@ export default function DetailsPage({
 		const startTimeStr = startTimeRaw.trim();
 		const localDate = new Date(day.replace(/-/g, "/"));
 		const parsedDate = parseTime(startTimeStr, localDate);
-
 		if (!parsedDate) {
 			alert("Could not determine the booking time. Please try again.");
 			return;
 		}
 
 		const dateTime = parsedDate.toISOString();
-
-		const validated = JSON.parse(
-			sessionStorage.getItem("validatedAddress") || "{}"
-		);
 
 		const bookingPayload = {
 			firstName: form.first,
@@ -143,10 +165,10 @@ export default function DetailsPage({
 			date: dateTime,
 			slot,
 			companyId: effectiveCompanyId,
-			address: validated.address || null,
+			address: validatedAddress.address ?? "",
 			location: {
-				lat: validated.lat || null,
-				lng: validated.lng || null,
+				lat: validatedAddress.lat ?? null,
+				lng: validatedAddress.lng ?? null,
 			},
 			paymentMethod: "stripe",
 		};
@@ -162,7 +184,11 @@ export default function DetailsPage({
 			if (!res.ok || !data.booking)
 				throw new Error(data.error || "Failed to create booking");
 
+			// ✅ Clean up session after successful booking
+			sessionStorage.removeItem("validatedAddress");
+			sessionStorage.removeItem("companyId");
 			sessionStorage.setItem("bookingDetails", JSON.stringify(data.booking));
+
 			if (embedded) {
 				const target = effectiveCompanyId
 					? `/embed/${effectiveCompanyId}?step=payment`
@@ -176,6 +202,7 @@ export default function DetailsPage({
 		}
 	}
 
+	// 🌀 Loading / Error states
 	if (loading)
 		return (
 			<div className="flex items-center justify-center py-12 text-gray-500">
@@ -191,6 +218,7 @@ export default function DetailsPage({
 			</div>
 		);
 
+	// 🧾 Render form
 	return (
 		<form
 			onSubmit={handleSubmit}
