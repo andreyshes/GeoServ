@@ -37,6 +37,7 @@ export async function POST(req: Request) {
 				country: "US",
 				capabilities: {
 					card_payments: { requested: true },
+					transfers: { requested: true },
 				},
 				business_type: "company",
 				metadata: { companyId },
@@ -50,7 +51,6 @@ export async function POST(req: Request) {
 			});
 		}
 
-		// ✅ Generate onboarding link
 		const accountLink = await stripe.accountLinks.create({
 			account: accountId,
 			refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
