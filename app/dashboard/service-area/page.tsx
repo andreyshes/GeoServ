@@ -14,7 +14,7 @@ import {
 	DialogTitle,
 	DialogDescription,
 	DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
 
 export default function ServiceAreaPage() {
