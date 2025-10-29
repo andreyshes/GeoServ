@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import Stripe from "stripe";
 import { db } from "@/lib/db";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+	apiVersion: "2025-09-30.clover",
+});
 
 export async function POST(req: Request) {
 	try {
@@ -22,8 +26,17 @@ export async function POST(req: Request) {
 			);
 		}
 
+		const company = booking.company;
+		if (!company.stripeAccountId) {
+			return NextResponse.json(
+				{ error: "Company not connected to Stripe" },
+				{ status: 400 }
+			);
+		}
+
 		const amountCents = booking.amountCents ?? 10000;
 
+		// ✅ Create checkout session with destination charge (Connect)
 		const session = await stripe.checkout.sessions.create({
 			mode: "payment",
 			payment_method_types: ["card"],
@@ -42,17 +55,23 @@ export async function POST(req: Request) {
 			],
 			success_url: `${process.env.NEXT_PUBLIC_APP_URL}/booking/confirmation?bookingId=${booking.id}&paid=true`,
 			cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/booking/confirmation?bookingId=${booking.id}&paid=false`,
-			metadata: {
-				bookingId: booking.id,
+			metadata: { bookingId: booking.id },
+			payment_intent_data: {
+				application_fee_amount: Math.round(amountCents * 0.1),
+				transfer_data: {
+					destination: company.stripeAccountId,
+				},
 			},
 		});
-		//
+
 		await db.booking.update({
 			where: { id: booking.id },
 			data: { stripeCheckoutSessionId: session.id },
 		});
 
-		return NextResponse.json({ checkoutUrl: session.url });
+		console.log("✅ Stripe checkout session created:", session.url);
+
+		return NextResponse.json({ url: session.url });
 	} catch (err: any) {
 		console.error("❌ Checkout error:", err);
 		return NextResponse.json({ error: err.message }, { status: 500 });

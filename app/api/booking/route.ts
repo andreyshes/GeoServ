@@ -33,7 +33,6 @@ function isValidCoordinates(loc: any): loc is { lat: number; lng: number } {
 	);
 }
 
-/** Haversine distance in km */
 function haversineDistance(
 	p1: { lat: number; lng: number },
 	p2: { lat: number; lng: number }
@@ -68,7 +67,6 @@ export async function POST(req: Request) {
 
 		console.log("📦 Incoming booking data:", data);
 
-		// ✅ 1. Basic validation
 		if (!companyId || !date || !slot || !serviceType || !email) {
 			return NextResponse.json(
 				{ error: "Missing required fields" },
@@ -76,7 +74,6 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// ✅ 2. Prevent double booking
 		const bookingDate = new Date(date);
 		bookingDate.setMinutes(
 			bookingDate.getMinutes() - bookingDate.getTimezoneOffset()
@@ -148,7 +145,6 @@ export async function POST(req: Request) {
 			}
 		}
 
-		// ✅ 5. Proceed with booking
 		const service = await db.service.findFirst({
 			where: { name: serviceType, companyId },
 		});
@@ -176,7 +172,6 @@ export async function POST(req: Request) {
 			include: { customer: true, company: true },
 		});
 
-		// ✅ 6. Handle “pay on arrival” bookings + send confirmation email
 		if (paymentMethod === "arrival") {
 			await db.booking.update({
 				where: { id: booking.id },
