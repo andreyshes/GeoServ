@@ -24,7 +24,6 @@ export default function AddressPage({
 	companyId,
 	embedded = false,
 }: AddressPageProps = {}) {
-	// ✅ Local state
 	const [address, setAddress] = useState("");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [error, setError] = useState<string | undefined>(undefined);
@@ -32,22 +31,28 @@ export default function AddressPage({
 	const [submitted, setSubmitted] = useState(false);
 	const [notifyLoading, setNotifyLoading] = useState(false);
 	const [notifyError, setNotifyError] = useState<string | null>(null);
-	const router = useRouter();
 
-	// ✅ Get fallback companyId from context if not passed via props
+	const router = useRouter();
 	const contextCompanyId = useCompanyId();
 	const effectiveCompanyId = companyId || contextCompanyId;
 	const embedPath =
 		embedded && effectiveCompanyId ? `/embed/${effectiveCompanyId}` : null;
 
-	// ✅ Handle submit
+	// ✅ Handle form submission
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(undefined);
 
 		try {
+			// ✅ If company is already known (embedded flow)
 			if (effectiveCompanyId) {
-				// Go straight to availability if companyId known
+				// Always save the address even without validation
+				sessionStorage.setItem(
+					"validatedAddress",
+					JSON.stringify({ address, lat: null, lng: null })
+				);
+				sessionStorage.setItem("companyId", effectiveCompanyId);
+
 				if (embedded && embedPath) {
 					router.push(`${embedPath}?step=schedule`);
 				} else {
@@ -56,7 +61,7 @@ export default function AddressPage({
 				return;
 			}
 
-			// Otherwise validate address and find company dynamically
+			// 🔍 Otherwise, validate address via API
 			const res = await fetch("/api/validate-address", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -75,6 +80,7 @@ export default function AddressPage({
 						lng: data.location.lng,
 					})
 				);
+
 				if (embedded) {
 					router.push(`/embed/${data.company.id}?step=schedule`);
 				} else {
@@ -91,7 +97,7 @@ export default function AddressPage({
 		}
 	}
 
-	// ✅ Handle Google autocomplete suggestions
+	// ✅ Autocomplete suggestions
 	async function handleInput(value: string) {
 		setAddress(value);
 		if (value.length < 3) {
@@ -111,11 +117,11 @@ export default function AddressPage({
 				setSuggestions([]);
 			}
 		} catch (err) {
-			console.error(err);
+			console.error("❌ Autocomplete error:", err);
 		}
 	}
 
-	// ✅ Notify when out of service area
+	// ✅ Notify user when out of service area
 	async function handleNotify(e: React.FormEvent) {
 		e.preventDefault();
 		setNotifyLoading(true);
@@ -145,7 +151,7 @@ export default function AddressPage({
 		<div className="container max-w-xl mx-auto mt-12">
 			<BookingProgress currentStep="address" />
 
-			<Card className="shadow-xl border border-border">
+			<Card className="shadow-xl border border-border bg-white/90 backdrop-blur">
 				<CardHeader>
 					<CardTitle className="text-2xl font-semibold">
 						Enter Your Address
@@ -187,7 +193,7 @@ export default function AddressPage({
 							<Button
 								type="submit"
 								size="lg"
-								className="w-full bg-gray-200 hover:bg-blue-500 hover:text-white"
+								className="w-full bg-gray-200 hover:bg-blue-500 hover:text-white transition-all"
 							>
 								{effectiveCompanyId ? "Continue" : "Check Address"}
 							</Button>
@@ -213,7 +219,7 @@ export default function AddressPage({
 								<Button
 									type="submit"
 									disabled={notifyLoading}
-									className="w-full hover:bg-blue-500 hover:text-white"
+									className="w-full hover:bg-blue-500 hover:text-white transition-all"
 								>
 									{notifyLoading ? "Sending..." : "Notify Me"}
 								</Button>

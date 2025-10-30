@@ -53,7 +53,6 @@ export default function DetailsPage({
 	const day = params.get("day");
 	const slot = params.get("slot");
 
-	// ✅ Load validated address from sessionStorage
 	useEffect(() => {
 		const saved = sessionStorage.getItem("validatedAddress");
 		if (!saved) {

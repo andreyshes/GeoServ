@@ -40,7 +40,6 @@ export default function SchedulePage({
 
 	const availableSet = useMemo(() => new Set(availableDays), [availableDays]);
 
-	// 🧠 Fetch availability for the next 90 days
 	useEffect(() => {
 		async function fetchAvailability() {
 			try {
