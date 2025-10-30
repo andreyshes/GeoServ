@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 
-export default function OnboardingSuccessPage() {
+export function OnboardingSuccessContent() {
 	const searchParams = useSearchParams();
 	const companyId = searchParams.get("companyId");
 	const [connected, setConnected] = useState<boolean | null>(null);
@@ -86,5 +86,18 @@ export default function OnboardingSuccessPage() {
 				</a>
 			</p>
 		</div>
+	);
+}
+export default function OnboardingSuccessPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex min-h-screen items-center justify-center text-gray-500">
+					Loading...
+				</div>
+			}
+		>
+			<OnboardingSuccessContent />
+		</Suspense>
 	);
 }
