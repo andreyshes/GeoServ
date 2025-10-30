@@ -9,15 +9,15 @@ export async function POST(req: Request) {
 		console.log("📥 Login attempt:", email);
 
 		if (!email || !password) {
-			console.warn("⚠️ Missing login credentials");
 			return NextResponse.json(
 				{ error: "Missing email or password" },
 				{ status: 400 }
 			);
 		}
 
-		const cookieStore = cookies();
-		const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+		// ✅ FIX: use callback form, not async/await
+		const supabase = createRouteHandlerClient({ cookies });
+
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email,
 			password,
@@ -30,8 +30,6 @@ export async function POST(req: Request) {
 				{ status: 401 }
 			);
 		}
-
-		console.log("✅ Authenticated user:", data.user.id);
 
 		const dbUser =
 			(await db.user.findUnique({
@@ -51,12 +49,6 @@ export async function POST(req: Request) {
 			);
 		}
 
-		console.log("🏢 Login success:", {
-			userEmail: dbUser.email,
-			companyName: dbUser.company.name,
-			companyId: dbUser.companyId,
-		});
-
 		return NextResponse.json({
 			success: true,
 			message: "Login successful",
@@ -68,10 +60,8 @@ export async function POST(req: Request) {
 				companyName: dbUser.company.name,
 			},
 		});
-	} catch (err: unknown) {
-		const message =
-			err instanceof Error ? err.message : "Server error during login";
-		console.error("❌ Login route crashed:", message);
-		return NextResponse.json({ error: message }, { status: 500 });
+	} catch (err: any) {
+		console.error("❌ Login route crashed:", err.message);
+		return NextResponse.json({ error: err.message }, { status: 500 });
 	}
 }
