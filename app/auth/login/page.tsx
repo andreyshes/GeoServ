@@ -35,7 +35,7 @@ export default function LoginPage() {
 			}
 
 			if (!res.ok || !data.success) {
-				setError(data.error || "Invalid email or password");
+				alert(data.error || "Invalid email or password");
 				setLoading(false);
 				return;
 			}
@@ -43,6 +43,12 @@ export default function LoginPage() {
 			sessionStorage.setItem("companyId", data.user.companyId);
 			sessionStorage.setItem("userEmail", data.user.email);
 			sessionStorage.setItem("userRole", data.user.role);
+
+			console.log("✅ Stored company info:", {
+				companyId: data.user.companyId,
+				email: data.user.email,
+				role: data.user.role,
+			});
 
 			router.push("/dashboard");
 		} catch (err) {
