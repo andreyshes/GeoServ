@@ -13,7 +13,6 @@ export async function POST(req: Request) {
 			return NextResponse.json({ error: "Missing companyId" }, { status: 400 });
 		}
 
-		// 🔍 Fetch company
 		const company = await db.company.findUnique({ where: { id: companyId } });
 		if (!company) {
 			return NextResponse.json({ error: "Company not found" }, { status: 404 });
@@ -22,17 +21,34 @@ export async function POST(req: Request) {
 		let accountId = company.stripeAccountId;
 		let account;
 
-		// 🧩 Try to retrieve existing Stripe account
 		if (accountId) {
 			try {
 				account = await stripe.accounts.retrieve(accountId);
+
+				if (account.details_submitted === false) {
+					console.log(
+						`⚙️ Account ${accountId} found but onboarding incomplete — re-sending onboarding link`
+					);
+
+					const link = await stripe.accountLinks.create({
+						account: accountId,
+						refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
+						return_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/success?companyId=${companyId}`,
+						type: "account_onboarding",
+					});
+
+					return NextResponse.json({
+						url: link.url,
+						message:
+							"Please complete Stripe onboarding to activate your payments.",
+					});
+				}
 			} catch (err) {
 				console.warn(`⚠️ Invalid Stripe account (${accountId}), recreating...`);
 				accountId = null;
 			}
 		}
 
-		// 🧠 Create a new Express account if not found or invalid
 		if (!accountId || !account) {
 			account = await stripe.accounts.create({
 				type: "express",
@@ -46,6 +62,7 @@ export async function POST(req: Request) {
 			});
 
 			accountId = account.id;
+
 			await db.company.update({
 				where: { id: companyId },
 				data: { stripeAccountId: accountId },
@@ -56,13 +73,12 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// 🧾 Ensure required capabilities are active or requested
 		const cardPaymentsStatus = account.capabilities?.card_payments;
 		const transfersStatus = account.capabilities?.transfers;
 
 		if (cardPaymentsStatus !== "active" || transfersStatus !== "active") {
 			console.log(
-				`⚙️ Capabilities missing or pending (card_payments=${cardPaymentsStatus}, transfers=${transfersStatus}) → requesting again...`
+				`⚙️ Capabilities missing/pending (card_payments=${cardPaymentsStatus}, transfers=${transfersStatus}) → requesting again...`
 			);
 
 			await stripe.accounts.update(accountId, {
@@ -73,19 +89,29 @@ export async function POST(req: Request) {
 			});
 		}
 
-		// 🧩 If capabilities were missing, make sure DB stays in sync
-		if (
-			!company.stripeAccountId ||
-			cardPaymentsStatus !== "active" ||
-			transfersStatus !== "active"
-		) {
+		if (!company.stripeAccountId) {
 			await db.company.update({
 				where: { id: companyId },
 				data: { stripeAccountId: accountId },
 			});
 		}
 
-		// 🌐 Generate onboarding link
+		if (
+			account.details_submitted === true &&
+			(cardPaymentsStatus !== "active" || transfersStatus !== "active")
+		) {
+			console.log(
+				`🔁 Account ${accountId} onboarded but awaiting capability approval — redirecting to onboarding to finalize.`
+			);
+			const link = await stripe.accountLinks.create({
+				account: accountId,
+				refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
+				return_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/success?companyId=${companyId}`,
+				type: "account_onboarding",
+			});
+			return NextResponse.json({ url: link.url });
+		}
+
 		const accountLink = await stripe.accountLinks.create({
 			account: accountId,
 			refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
