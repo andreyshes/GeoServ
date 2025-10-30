@@ -13,26 +13,28 @@ export async function POST(req: Request) {
 			return NextResponse.json({ error: "Missing companyId" }, { status: 400 });
 		}
 
+		// 🧠 Get company from DB
 		const company = await db.company.findUnique({ where: { id: companyId } });
 		if (!company) {
 			return NextResponse.json({ error: "Company not found" }, { status: 404 });
 		}
 
 		let accountId = company.stripeAccountId;
+		let account;
 
-		let accountValid = false;
+		// ✅ Retrieve or recreate Stripe account
 		if (accountId) {
 			try {
-				const existing = await stripe.accounts.retrieve(accountId);
-				accountValid = !!existing.id;
-			} catch {
-				console.warn("⚠️ Invalid or test Stripe account — recreating");
+				account = await stripe.accounts.retrieve(accountId);
+			} catch (err) {
+				console.warn(`⚠️ Invalid Stripe account ${accountId}, recreating...`);
 				accountId = null;
 			}
 		}
 
-		if (!accountId || !accountValid) {
-			const newAccount = await stripe.accounts.create({
+		if (!accountId || !account) {
+			// 🧩 Create a new connected account with full capabilities requested
+			account = await stripe.accounts.create({
 				type: "express",
 				country: "US",
 				capabilities: {
@@ -43,8 +45,36 @@ export async function POST(req: Request) {
 				metadata: { companyId },
 			});
 
-			accountId = newAccount.id;
+			accountId = account.id;
 
+			// ✅ Update the company record with the new accountId
+			await db.company.update({
+				where: { id: companyId },
+				data: { stripeAccountId: accountId },
+			});
+
+			console.log("✅ Created new connected account:", accountId);
+		}
+
+		// 🧠 Ensure capabilities are requested & active
+		const needsUpdate =
+			account.capabilities?.card_payments !== "active" ||
+			account.capabilities?.transfers !== "active";
+
+		if (needsUpdate) {
+			console.log("⚙️ Updating Stripe capabilities for", accountId);
+
+			// Request capabilities again (in case they were not requested initially)
+			await stripe.accounts.update(accountId, {
+				capabilities: {
+					card_payments: { requested: true },
+					transfers: { requested: true },
+				},
+			});
+		}
+
+		// ✅ Update DB if capabilities changed or were missing before
+		if (needsUpdate || !company.stripeAccountId) {
 			await db.company.update({
 				where: { id: companyId },
 				data: { stripeAccountId: accountId },
@@ -54,7 +84,7 @@ export async function POST(req: Request) {
 		const accountLink = await stripe.accountLinks.create({
 			account: accountId,
 			refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
-			return_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/success`,
+			return_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/onboarding/callback?account=${accountId}`,
 			type: "account_onboarding",
 		});
 

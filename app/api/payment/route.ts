@@ -36,7 +36,6 @@ export async function POST(req: Request) {
 
 		const amountCents = booking.amountCents ?? 10000;
 
-		// ✅ Create checkout session with destination charge (Connect)
 		const session = await stripe.checkout.sessions.create({
 			mode: "payment",
 			payment_method_types: ["card"],
