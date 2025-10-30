@@ -290,6 +290,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 				</Button>
 			</div>
 
+			{/* STRIPE CONNECT STATUS */}
 			<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between">
 				<div>
 					<h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -301,24 +302,81 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 					</p>
 				</div>
 
-				<Button
-					onClick={async () => {
-						const res = await fetch("/api/stripe/connect", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({ companyId: companyId }),
-						});
-						const data = await res.json();
-						if (data.url) {
-							window.location.href = data.url;
-						} else {
-							alert(data.error || "Error connecting Stripe");
+				{(() => {
+					const [connected, setConnected] = useState<boolean | null>(null);
+					const [loadingConnect, setLoadingConnect] = useState(false);
+
+					useEffect(() => {
+						async function checkStripeStatus() {
+							try {
+								const res = await fetch("/api/stripe/check-status", {
+									method: "POST",
+									headers: { "Content-Type": "application/json" },
+									body: JSON.stringify({ companyId }),
+								});
+								const data = await res.json();
+								setConnected(data.connected);
+							} catch (err) {
+								console.error("❌ Error checking Stripe status:", err);
+								setConnected(false);
+							}
 						}
-					}}
-					className="mt-4 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white"
-				>
-					Connect with Stripe
-				</Button>
+						checkStripeStatus();
+					}, [companyId]);
+
+					async function handleConnect() {
+						try {
+							setLoadingConnect(true);
+							const res = await fetch("/api/stripe/connect", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({ companyId }),
+							});
+							const data = await res.json();
+							if (data.url) window.location.href = data.url;
+							else alert(data.error || "Error connecting Stripe");
+						} catch (err) {
+							console.error("❌ Connect error:", err);
+							alert("Something went wrong, please try again.");
+						} finally {
+							setLoadingConnect(false);
+						}
+					}
+
+					if (connected === null)
+						return <p className="text-gray-400 mt-3 sm:mt-0">Checking...</p>;
+
+					if (connected)
+						return (
+							<div className="flex items-center gap-2 text-green-600 font-medium mt-3 sm:mt-0">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									className="w-5 h-5"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									strokeWidth={2}
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M5 13l4 4L19 7"
+									/>
+								</svg>
+								Stripe Connected
+							</div>
+						);
+
+					return (
+						<Button
+							onClick={handleConnect}
+							disabled={loadingConnect}
+							className="mt-4 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white"
+						>
+							{loadingConnect ? "Connecting..." : "Connect with Stripe"}
+						</Button>
+					);
+				})()}
 			</div>
 
 			{/* STATS CARDS */}
