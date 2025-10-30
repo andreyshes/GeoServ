@@ -9,7 +9,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
 	try {
 		const { bookingId } = await req.json();
-
 		if (!bookingId) {
 			return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
 		}
@@ -35,6 +34,7 @@ export async function POST(req: Request) {
 		}
 
 		const amountCents = booking.amountCents ?? 10000;
+		const appFee = Math.round(amountCents * 0.1);
 
 		const session = await stripe.checkout.sessions.create({
 			mode: "payment",
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 						currency: "usd",
 						product_data: {
 							name: booking.serviceType || "Service Payment",
-							description: `${booking.company.name} — Booking`,
+							description: `${company.name} — Booking`,
 						},
 						unit_amount: amountCents,
 					},
@@ -56,7 +56,8 @@ export async function POST(req: Request) {
 			cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/booking/confirmation?bookingId=${booking.id}&paid=false`,
 			metadata: { bookingId: booking.id },
 			payment_intent_data: {
-				application_fee_amount: Math.round(amountCents * 0.1),
+				on_behalf_of: company.stripeAccountId, // ✅ important for Connect
+				application_fee_amount: appFee,
 				transfer_data: {
 					destination: company.stripeAccountId,
 				},
