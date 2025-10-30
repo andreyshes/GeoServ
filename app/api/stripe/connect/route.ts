@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 			return NextResponse.json({ error: "Missing companyId" }, { status: 400 });
 		}
 
-		// 🧠 Get company from DB
+		// 🔍 Fetch company
 		const company = await db.company.findUnique({ where: { id: companyId } });
 		if (!company) {
 			return NextResponse.json({ error: "Company not found" }, { status: 404 });
@@ -22,49 +22,49 @@ export async function POST(req: Request) {
 		let accountId = company.stripeAccountId;
 		let account;
 
-		// ✅ Retrieve or recreate Stripe account
+		// 🧩 Try to retrieve existing Stripe account
 		if (accountId) {
 			try {
 				account = await stripe.accounts.retrieve(accountId);
 			} catch (err) {
-				console.warn(`⚠️ Invalid Stripe account ${accountId}, recreating...`);
+				console.warn(`⚠️ Invalid Stripe account (${accountId}), recreating...`);
 				accountId = null;
 			}
 		}
 
+		// 🧠 Create a new Express account if not found or invalid
 		if (!accountId || !account) {
-			// 🧩 Create a new connected account with full capabilities requested
 			account = await stripe.accounts.create({
 				type: "express",
 				country: "US",
+				business_type: "company",
 				capabilities: {
 					card_payments: { requested: true },
 					transfers: { requested: true },
 				},
-				business_type: "company",
 				metadata: { companyId },
 			});
 
 			accountId = account.id;
-
-			// ✅ Update the company record with the new accountId
 			await db.company.update({
 				where: { id: companyId },
 				data: { stripeAccountId: accountId },
 			});
 
-			console.log("✅ Created new connected account:", accountId);
+			console.log(
+				`✅ Created new Stripe account for ${company.name}: ${accountId}`
+			);
 		}
 
-		// 🧠 Ensure capabilities are requested & active
-		const needsUpdate =
-			account.capabilities?.card_payments !== "active" ||
-			account.capabilities?.transfers !== "active";
+		// 🧾 Ensure required capabilities are active or requested
+		const cardPaymentsStatus = account.capabilities?.card_payments;
+		const transfersStatus = account.capabilities?.transfers;
 
-		if (needsUpdate) {
-			console.log("⚙️ Updating Stripe capabilities for", accountId);
+		if (cardPaymentsStatus !== "active" || transfersStatus !== "active") {
+			console.log(
+				`⚙️ Capabilities missing or pending (card_payments=${cardPaymentsStatus}, transfers=${transfersStatus}) → requesting again...`
+			);
 
-			// Request capabilities again (in case they were not requested initially)
 			await stripe.accounts.update(accountId, {
 				capabilities: {
 					card_payments: { requested: true },
@@ -73,20 +73,29 @@ export async function POST(req: Request) {
 			});
 		}
 
-		// ✅ Update DB if capabilities changed or were missing before
-		if (needsUpdate || !company.stripeAccountId) {
+		// 🧩 If capabilities were missing, make sure DB stays in sync
+		if (
+			!company.stripeAccountId ||
+			cardPaymentsStatus !== "active" ||
+			transfersStatus !== "active"
+		) {
 			await db.company.update({
 				where: { id: companyId },
 				data: { stripeAccountId: accountId },
 			});
 		}
 
+		// 🌐 Generate onboarding link
 		const accountLink = await stripe.accountLinks.create({
 			account: accountId,
 			refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
-			return_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/onboarding/callback?account=${accountId}`,
+			return_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/success?companyId=${companyId}`,
 			type: "account_onboarding",
 		});
+
+		console.log(
+			`🔗 Stripe onboarding link generated for ${company.name}: ${accountLink.url}`
+		);
 
 		return NextResponse.json({ url: accountLink.url });
 	} catch (err: any) {
