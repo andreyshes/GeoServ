@@ -15,7 +15,6 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// ✅ FIX: use callback form, not async/await
 		const supabase = createRouteHandlerClient({ cookies });
 
 		const { data, error } = await supabase.auth.signInWithPassword({
@@ -31,6 +30,16 @@ export async function POST(req: Request) {
 			);
 		}
 
+		// ✅ Ensure the Supabase client used the correct anon key
+		if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+			console.error("❌ Missing NEXT_PUBLIC_SUPABASE_ANON_KEY in environment.");
+			return NextResponse.json(
+				{ error: "Server misconfiguration — Supabase key missing" },
+				{ status: 500 }
+			);
+		}
+
+		// ✅ Match user to company
 		const dbUser =
 			(await db.user.findUnique({
 				where: { authUserId: data.user.id },
@@ -48,6 +57,8 @@ export async function POST(req: Request) {
 				{ status: 404 }
 			);
 		}
+
+		console.log("✅ Login success for:", dbUser.email);
 
 		return NextResponse.json({
 			success: true,
