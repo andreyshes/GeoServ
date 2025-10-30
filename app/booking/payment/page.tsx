@@ -44,7 +44,17 @@ export default function PaymentPage({
 			if (!res.ok)
 				throw new Error(data.error || "Payment initialization failed");
 
-			window.location.href = data.url || data.checkoutUrl;
+			const checkoutUrl = data.url || data.checkoutUrl;
+			if (!checkoutUrl)
+				throw new Error("No checkout URL received from server.");
+
+			if (typeof window !== "undefined") {
+				if (window.top && window.top !== window.self) {
+					window.top.location.href = checkoutUrl;
+				} else {
+					window.location.href = checkoutUrl;
+				}
+			}
 		} catch (err: any) {
 			console.error("❌ Payment error:", err);
 			alert(err.message || "Something went wrong, please try again.");
