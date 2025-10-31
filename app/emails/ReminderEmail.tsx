@@ -9,6 +9,7 @@ import {
 	Preview,
 	Hr,
 	Section,
+	Img,
 } from "@react-email/components";
 
 interface ReminderEmailProps {
@@ -18,6 +19,7 @@ interface ReminderEmailProps {
 	date: string;
 	slot: string;
 	ref: string;
+	logoUrl?: string;
 }
 
 export default function ReminderEmail({
@@ -27,6 +29,7 @@ export default function ReminderEmail({
 	date,
 	slot,
 	ref,
+	logoUrl,
 }: ReminderEmailProps) {
 	const formattedDate = new Date(date).toLocaleDateString(undefined, {
 		weekday: "long",
@@ -34,12 +37,12 @@ export default function ReminderEmail({
 		day: "numeric",
 	});
 
-	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+	const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.geoserv.org";
 
 	return (
 		<Html>
 			<Head />
-			<Preview>Your {company} appointment is coming up</Preview>
+			<Preview>Your {company} appointment reminder</Preview>
 			<Body
 				style={{
 					margin: 0,
@@ -51,21 +54,44 @@ export default function ReminderEmail({
 			>
 				<Container
 					style={{
-						maxWidth: "620px",
+						maxWidth: "600px",
 						margin: "48px auto",
 						background: "#ffffff",
-						borderRadius: "16px",
-						padding: "48px 40px",
+						borderRadius: "18px",
+						padding: "44px 36px",
 						boxShadow:
-							"0 8px 24px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)",
+							"0 10px 30px rgba(0,0,0,0.06), 0 2px 10px rgba(0,0,0,0.04)",
 						border: "1px solid #e5e7eb",
 					}}
 				>
-					{/* Header */}
+					{/* Logo Header */}
+					<Section style={{ textAlign: "center", marginBottom: "20px" }}>
+						{logoUrl ? (
+							<Img
+								src={logoUrl}
+								alt={`${company} logo`}
+								width="80"
+								style={{ marginBottom: "10px", borderRadius: "8px" }}
+							/>
+						) : (
+							<Heading
+								style={{
+									fontSize: "24px",
+									fontWeight: 700,
+									color: "#0f172a",
+									margin: 0,
+								}}
+							>
+								GeoServ
+							</Heading>
+						)}
+					</Section>
+
+					{/* Title + Subtitle */}
 					<Section style={{ textAlign: "center", marginBottom: "32px" }}>
 						<Heading
 							style={{
-								fontSize: "28px",
+								fontSize: "26px",
 								fontWeight: 700,
 								color: "#0f172a",
 								marginBottom: "8px",
@@ -75,12 +101,12 @@ export default function ReminderEmail({
 						</Heading>
 						<Text
 							style={{
-								fontSize: "16px",
+								fontSize: "15px",
 								color: "#64748b",
-								marginBottom: "0",
+								margin: 0,
 							}}
 						>
-							Your appointment with <strong>{company}</strong> is scheduled
+							Your appointment with <strong>{company}</strong> is coming up
 							soon.
 						</Text>
 					</Section>
@@ -88,22 +114,28 @@ export default function ReminderEmail({
 					{/* Appointment Details */}
 					<Section
 						style={{
-							background:
-								"linear-gradient(135deg, #eff6ff 0%, #e0f2fe 50%, #dbeafe 100%)",
+							background: "linear-gradient(145deg, #eef7ff 0%, #ebfef4 100%)",
 							borderRadius: "12px",
-							padding: "24px 28px",
-							marginBottom: "40px",
+							padding: "20px 24px",
+							marginBottom: "36px",
 							border: "1px solid #dbeafe",
 						}}
 					>
-						<Text style={{ fontSize: "15px", lineHeight: "1.7", margin: 0 }}>
-							<strong style={{ color: "#0f172a" }}>Hi {name},</strong>
+						<Text
+							style={{
+								fontSize: "15px",
+								lineHeight: "1.7",
+								margin: "0 0 14px 0",
+								color: "#0f172a",
+							}}
+						>
+							<strong>Hi {name},</strong>
 							<br />
 							We’re looking forward to seeing you! Here are your appointment
 							details:
 						</Text>
 
-						<Hr style={{ borderColor: "#dbeafe", margin: "20px 0" }} />
+						<Hr style={{ borderColor: "#dbeafe", margin: "18px 0" }} />
 
 						<Text
 							style={{
@@ -123,60 +155,67 @@ export default function ReminderEmail({
 						</Text>
 					</Section>
 
-					{/* Buttons */}
-					<Section
-						style={{
-							display: "flex",
-							justifyContent: "center",
-							gap: "16px",
-							flexWrap: "wrap",
-							marginBottom: "40px",
-						}}
-					>
-						<Button
-							href={`${baseUrl}/api/booking/confirm?token=${ref}`}
+					{/* Action Buttons */}
+					<Section style={{ textAlign: "center", marginBottom: "40px" }}>
+						<div
 							style={{
-								background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-								color: "#ffffff",
-								padding: "14px 32px",
-								borderRadius: "10px",
-								fontWeight: 600,
-								textDecoration: "none",
-								fontSize: "15px",
-								boxShadow: "0 4px 12px rgba(34,197,94,0.3)",
+								display: "inline-block",
+								textAlign: "center",
+								marginTop: "12px",
 							}}
 						>
-							✅ Confirm Appointment
-						</Button>
+							<Button
+								href={`${baseUrl}/api/booking/confirm?token=${ref}`}
+								style={{
+									background:
+										"linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+									color: "#ffffff",
+									padding: "12px 28px",
+									borderRadius: "10px",
+									fontWeight: 600,
+									textDecoration: "none",
+									fontSize: "15px",
+									boxShadow: "0 4px 10px rgba(34,197,94,0.25)",
+									marginRight: "18px", // ✅ fixed horizontal spacing
+									display: "inline-block",
+								}}
+							>
+								✅ Confirm
+							</Button>
 
-						<Button
-							href={`${baseUrl}/api/booking/cancel?token=${ref}`}
-							style={{
-								background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-								color: "#ffffff",
-								padding: "14px 32px",
-								borderRadius: "10px",
-								fontWeight: 600,
-								textDecoration: "none",
-								fontSize: "15px",
-								boxShadow: "0 4px 12px rgba(239,68,68,0.25)",
-							}}
-						>
-							✖ Cancel Appointment
-						</Button>
+							<Button
+								href={`${baseUrl}/api/booking/cancel?token=${ref}`}
+								style={{
+									background:
+										"linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+									color: "#ffffff",
+									padding: "12px 28px",
+									borderRadius: "10px",
+									fontWeight: 600,
+									textDecoration: "none",
+									fontSize: "15px",
+									boxShadow: "0 4px 10px rgba(239,68,68,0.25)",
+									display: "inline-block",
+								}}
+							>
+								✖ Cancel
+							</Button>
+						</div>
 					</Section>
 
 					{/* Footer */}
-					<Hr style={{ borderColor: "#e5e7eb", marginBottom: "16px" }} />
+					<Hr style={{ borderColor: "#e5e7eb", marginBottom: "12px" }} />
 					<Text
 						style={{
-							fontSize: "13px",
+							fontSize: "12px",
 							color: "#9ca3af",
 							textAlign: "center",
 							lineHeight: "1.6",
 						}}
 					>
-						© {new Date().getFullYear()} GeoServ, Inc. <br />
+						© {new Date().getFullYear()} GeoServ, Inc.
+						<br />
+						This email was sent automatically — please do not reply.
 					</Text>
 				</Container>
 			</Body>

@@ -49,7 +49,7 @@ export async function GET() {
 				ref: b.confirmationToken!,
 			});
 		}
-		// 🧪 TEMPORARY TEST EMAIL (remove after verifying)
+
 		await sendReminderEmail({
 			to: "shestopalandreyy@gmail.com",
 			name: "Andrey",

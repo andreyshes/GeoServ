@@ -19,13 +19,11 @@ export async function GET(req: Request) {
 		if (!booking)
 			return NextResponse.json({ error: "Invalid token" }, { status: 404 });
 
-		// ✅ Update status
 		await db.booking.update({
 			where: { id: booking.id },
 			data: { status: "canceled" },
 		});
 
-		// ✅ Broadcast to dashboard clients
 		await supabaseServer.channel("booking-updates").send({
 			type: "broadcast",
 			event: "booking-updated",
@@ -36,7 +34,6 @@ export async function GET(req: Request) {
 			},
 		});
 
-		// ✅ Beautiful HTML response
 		const html = `
 		<!DOCTYPE html>
 		<html lang="en">
