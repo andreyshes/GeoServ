@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	GoogleMap,
 	CircleF,
@@ -18,7 +18,9 @@ import {
 import { Button } from "@/app/components/ui/button";
 
 export default function ServiceAreaPage() {
-	const [center, setCenter] = useState({ lat: 45.63, lng: -122.67 });
+	const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
+		null
+	);
 	const [radiusKm, setRadiusKm] = useState(30);
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -29,10 +31,47 @@ export default function ServiceAreaPage() {
 	const { isLoaded, loadError } = useJsApiLoader({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
 	});
+	useEffect(() => {
+		async function loadServiceArea() {
+			if (!companyId) return;
+
+			try {
+				const res = await fetch(
+					`/api/company/service-area?companyId=${companyId}`
+				);
+				const data = await res.json();
+
+				if (res.ok && data?.centerLat && data?.centerLng) {
+					setCenter({ lat: data.centerLat, lng: data.centerLng });
+					setRadiusKm(data.radiusKm || 30);
+				} else if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(
+						(pos) =>
+							setCenter({
+								lat: pos.coords.latitude,
+								lng: pos.coords.longitude,
+							}),
+						() => setCenter({ lat: 45.52, lng: -122.68 }) // Fallback to Portland area
+					);
+				} else {
+					setCenter({ lat: 45.52, lng: -122.68 }); // Fallback
+				}
+			} catch (err) {
+				console.error("❌ Error loading service area:", err);
+				setCenter({ lat: 45.52, lng: -122.68 }); // Fallback
+			}
+		}
+
+		loadServiceArea();
+	}, [companyId]);
 
 	async function handleSave() {
 		if (!companyId) {
 			alert("No company ID found — please re-login or create a company.");
+			return;
+		}
+		if (!center) {
+			alert("Map not ready yet, please wait a moment.");
 			return;
 		}
 
@@ -54,20 +93,24 @@ export default function ServiceAreaPage() {
 			if (!res.ok) {
 				const err = await res.json();
 				console.error("❌ API error:", err);
+				alert("Error saving service area.");
 				return;
 			}
 
 			setOpen(true);
 		} catch (e) {
 			console.error("Error saving service area:", e);
+			alert("Something went wrong while saving.");
 		} finally {
 			setLoading(false);
 		}
 	}
 
 	if (loadError) return <div className="text-red-500">Error loading map</div>;
-	if (!isLoaded)
-		return <div className="text-gray-500">Loading Google Maps...</div>;
+	if (!isLoaded || !center)
+		return (
+			<div className="text-gray-500 text-center py-20">Loading map...</div>
+		);
 
 	return (
 		<div className="max-w-5xl mx-auto px-6 py-20 flex flex-col items-center">
@@ -79,6 +122,7 @@ export default function ServiceAreaPage() {
 				serves.
 			</p>
 
+			{/* 🗺️ Map */}
 			<div className="w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white mb-8">
 				<GoogleMap
 					center={center}
@@ -118,6 +162,7 @@ export default function ServiceAreaPage() {
 				</GoogleMap>
 			</div>
 
+			{/* Controls */}
 			<div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
 				<div className="flex items-center gap-3">
 					<label className="font-medium text-gray-700">Radius (km):</label>
@@ -135,7 +180,7 @@ export default function ServiceAreaPage() {
 				<Button
 					onClick={handleSave}
 					disabled={loading || !companyId}
-					className="hover:bg-blue-400 hover:text-white"
+					className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5"
 				>
 					{loading ? "Saving..." : "Save Area"}
 				</Button>
@@ -145,16 +190,16 @@ export default function ServiceAreaPage() {
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent className="sm:max-w-md text-center bg-white text-black">
 					<DialogHeader>
-						<DialogTitle className="text-green-600">
+						<DialogTitle className="text-green-600 text-lg font-semibold">
 							Service Area Saved ✅
 						</DialogTitle>
-						<DialogDescription>
-							Your changes have been successfully saved.
+						<DialogDescription className="text-gray-600">
+							Your service area has been successfully saved.
 						</DialogDescription>
 					</DialogHeader>
-					<DialogFooter>
+					<DialogFooter className="flex justify-center">
 						<Button
-							className="hover:bg-blue-400 hover:text-white"
+							className="bg-blue-600 hover:bg-blue-700 text-white"
 							onClick={() => setOpen(false)}
 						>
 							Close

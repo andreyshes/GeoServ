@@ -11,6 +11,7 @@ import {
 	DialogDescription,
 	DialogFooter,
 } from "@/app/components/ui/dialog";
+import { useCompanyId } from "@/app/booking/CompanyProvider";
 import { Button } from "@/app/components/ui/button";
 
 export default function RegisterPage() {
@@ -20,6 +21,8 @@ export default function RegisterPage() {
 	const [loading, setLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
+	const [address, setAddress] = useState("");
+
 	const router = useRouter();
 
 	async function handleRegister(e: React.FormEvent) {
@@ -31,7 +34,7 @@ export default function RegisterPage() {
 			const res = await fetch("/api/auth/register", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ companyName, email, password }),
+				body: JSON.stringify({ companyName, email, password, address }),
 			});
 
 			const data = await res.json();
@@ -39,7 +42,6 @@ export default function RegisterPage() {
 
 			if (!res.ok) throw new Error(data.error || "Registration failed");
 
-			// ✅ Show modal instead of alert
 			setShowSuccess(true);
 		} catch (err: any) {
 			setErrorMessage(err.message || "Something went wrong.");
@@ -103,6 +105,18 @@ export default function RegisterPage() {
 							autoComplete="new-password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm text-neutral-300 mb-1">
+							Business Address
+						</label>
+						<input
+							type="text"
+							placeholder="123 Main St, Seattle, WA"
+							className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/40 focus:border-transparent transition"
+							onChange={(e) => setAddress(e.target.value)}
 						/>
 					</div>
 

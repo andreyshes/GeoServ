@@ -16,6 +16,9 @@ model Company {
   stripeAccountId    String?
   subscriptionStatus String?
   createdAt          DateTime      @default(now())
+  address            String?
+  addressLat         Float?
+  addressLng         Float?
   bookings           Booking[]
   leads              Lead[]
   services           Service[]

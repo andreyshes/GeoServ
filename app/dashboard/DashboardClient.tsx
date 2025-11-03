@@ -3,7 +3,6 @@ import StripeConnectCard from "@/app/components/dashboard/StripeConnectCard";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 import {
-	RefreshCcw,
 	Users,
 	DollarSign,
 	ClipboardList,
@@ -46,6 +45,7 @@ import {
 import { Label } from "@/app/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import BusinessInfoCard from "@/app/components/dashboard/BusinessInfoCard";
 interface DashboardClientProps {
 	companyId: string;
 }
@@ -274,6 +274,10 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 	return (
 		<div className="pt-28 pb-16 max-w-7xl mx-auto px-6 space-y-8">
 			<StripeConnectCard companyId={companyId} />
+
+			{/* BUSINESS INFO CARD */}
+
+			<BusinessInfoCard companyId={companyId} />
 
 			{/* STATS CARDS */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

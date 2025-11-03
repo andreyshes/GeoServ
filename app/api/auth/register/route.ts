@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createClient } from "@supabase/supabase-js";
+import { getCoordinates } from "@/lib/geo";
 
 export async function POST(req: Request) {
 	try {
-		const { companyName, email, password } = await req.json();
+		const { companyName, email, password, address } = await req.json();
 
 		if (!companyName || !email || !password) {
 			return NextResponse.json(
@@ -13,18 +14,37 @@ export async function POST(req: Request) {
 			);
 		}
 
+		let addressLat: number | null = null;
+		let addressLng: number | null = null;
+
+		if (address) {
+			try {
+				const coords = await getCoordinates(address);
+				if (coords) {
+					addressLat = coords.lat;
+					addressLng = coords.lng;
+				}
+			} catch (geoErr) {
+				console.warn("⚠️ Geocoding failed:", geoErr);
+			}
+		}
+
 		const origin = req.headers.get("origin") || "";
 		const hostname = new URL(origin).hostname || "geoserv.org";
 		const uniqueDomain = `${companyName
 			.toLowerCase()
 			.replace(/\s+/g, "-")}.${hostname}`;
 
+		// 🏢 Create company record
 		const company = await db.company.create({
 			data: {
 				name: companyName,
 				domain: uniqueDomain,
 				logoUrl: `https://placehold.co/200x50?text=${encodeURIComponent(companyName)}`,
 				subscriptionStatus: "active",
+				address: address || null,
+				addressLat,
+				addressLng,
 			},
 		});
 
@@ -51,7 +71,6 @@ export async function POST(req: Request) {
 		const supabaseUser = data.user;
 		if (!supabaseUser) throw new Error("Failed to create Supabase user.");
 
-		// ✅ Link the user to the new company
 		await db.user.create({
 			data: {
 				authUserId: supabaseUser.id,
@@ -63,7 +82,8 @@ export async function POST(req: Request) {
 		});
 
 		console.log(`✅ Company created: ${company.name}`);
-		console.log(`🆔 Company ID: ${company.id}`);
+		console.log(`📍 Address: ${address || "N/A"}`);
+		console.log(`🗺️ Coords: ${addressLat}, ${addressLng}`);
 		console.log(`👤 Admin user: ${email}`);
 
 		return NextResponse.json({
