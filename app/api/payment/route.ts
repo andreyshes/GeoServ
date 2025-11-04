@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 			cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/booking/confirmation?bookingId=${booking.id}&paid=false`,
 			metadata: { bookingId: booking.id },
 			payment_intent_data: {
-				on_behalf_of: company.stripeAccountId, 
+				on_behalf_of: company.stripeAccountId,
 				application_fee_amount: appFee,
 				transfer_data: {
 					destination: company.stripeAccountId,

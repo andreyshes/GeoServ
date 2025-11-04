@@ -69,7 +69,6 @@ export default function DetailsPage({
 		}
 	}, [router]);
 
-	// ✅ Fetch services for the company
 	useEffect(() => {
 		if (!effectiveCompanyId) return;
 		let isMounted = true;
@@ -183,7 +182,6 @@ export default function DetailsPage({
 			if (!res.ok || !data.booking)
 				throw new Error(data.error || "Failed to create booking");
 
-			// ✅ Clean up session after successful booking
 			sessionStorage.removeItem("validatedAddress");
 			sessionStorage.removeItem("companyId");
 			sessionStorage.setItem("bookingDetails", JSON.stringify(data.booking));
@@ -201,7 +199,6 @@ export default function DetailsPage({
 		}
 	}
 
-	// 🌀 Loading / Error states
 	if (loading)
 		return (
 			<div className="flex items-center justify-center py-12 text-gray-500">
@@ -217,7 +214,6 @@ export default function DetailsPage({
 			</div>
 		);
 
-	// 🧾 Render form
 	return (
 		<form
 			onSubmit={handleSubmit}

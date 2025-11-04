@@ -89,6 +89,7 @@ export default function ConfirmationPage({
 
 	return (
 		<section className="flex flex-col items-center justify-center py-20 px-4">
+			<BookingProgress currentStep="confirmation" />
 			<CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
 			<h1 className="text-3xl font-bold mb-2">Booking Confirmed!</h1>
 

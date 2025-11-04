@@ -44,9 +44,7 @@ export default function AddressPage({
 		setError(undefined);
 
 		try {
-			// ✅ If company is already known (embedded flow)
 			if (effectiveCompanyId) {
-				// Always save the address even without validation
 				sessionStorage.setItem(
 					"validatedAddress",
 					JSON.stringify({ address, lat: null, lng: null })
@@ -54,14 +52,18 @@ export default function AddressPage({
 				sessionStorage.setItem("companyId", effectiveCompanyId);
 
 				if (embedded && embedPath) {
-					router.push(`${embedPath}?step=schedule`);
+					const query = new URLSearchParams({ step: "schedule", address });
+					router.push(`${embedPath}?${query.toString()}`);
 				} else {
-					router.push(`/booking/availability?companyId=${effectiveCompanyId}`);
+					const query = new URLSearchParams({
+						companyId: effectiveCompanyId,
+						address,
+					});
+					router.push(`/booking/availability?${query.toString()}`);
 				}
 				return;
 			}
 
-			// 🔍 Otherwise, validate address via API
 			const res = await fetch("/api/validate-address", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -82,9 +84,17 @@ export default function AddressPage({
 				);
 
 				if (embedded) {
-					router.push(`/embed/${data.company.id}?step=schedule`);
+					const query = new URLSearchParams({
+						step: "schedule",
+						address,
+					});
+					router.push(`/embed/${data.company.id}?${query.toString()}`);
 				} else {
-					router.push(`/booking/availability?companyId=${data.company.id}`);
+					const query = new URLSearchParams({
+						companyId: data.company.id,
+						address,
+					});
+					router.push(`/booking/availability?${query.toString()}`);
 				}
 			} else {
 				setError(
@@ -146,7 +156,6 @@ export default function AddressPage({
 		}
 	}
 
-	// ✅ UI
 	return (
 		<div className="container max-w-xl mx-auto mt-12">
 			<BookingProgress currentStep="address" />

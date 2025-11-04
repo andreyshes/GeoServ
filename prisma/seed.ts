@@ -49,7 +49,7 @@ async function main() {
 								],
 							],
 						},
-						availableDays: ["Tue", "Thu"], // 🗓️ only on specific weekdays
+						availableDays: ["Tue", "Thu"],
 					},
 				],
 			},

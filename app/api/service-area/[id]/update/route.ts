@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export async function POST(req: Request, context: any) {
+export async function POST(
+	req: NextRequest,
+	context: { params: Promise<{ id: string }> }
+) {
 	try {
 		const { id } = await context.params;
 		const { availableDays } = await req.json();
