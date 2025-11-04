@@ -39,19 +39,19 @@ model User {
 }
 
 model ServiceArea {
-  id        String               @id @default(cuid())
-  companyId String
-  name      String
-  type      ServiceAreaType
-  centerLat Float?
-  centerLng Float?
-  radiusKm  Float?
-  polygon   Json?
-  availableDays  String[]   // e.g. ["Mon", "Wed", "Fri"]
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  company   Company              @relation(fields: [companyId], references: [id])
-  zipCodes  ServiceAreaZipCode[]
+  id            String               @id @default(cuid())
+  companyId     String
+  name          String
+  type          ServiceAreaType
+  centerLat     Float?
+  centerLng     Float?
+  radiusKm      Float?
+  polygon       Json?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  availableDays String[]
+  company       Company              @relation(fields: [companyId], references: [id])
+  zipCodes      ServiceAreaZipCode[]
 }
 
 model ServiceAreaZipCode {

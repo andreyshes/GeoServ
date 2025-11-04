@@ -16,6 +16,7 @@ import {
 	DialogFooter,
 } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
+import ServiceAreaCard from "./ServiceAreaCard";
 
 export default function ServiceAreaPage() {
 	const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
@@ -24,6 +25,12 @@ export default function ServiceAreaPage() {
 	const [radiusKm, setRadiusKm] = useState(30);
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [availableDays, setAvailableDays] = useState<string[]>([
+		"Mon",
+		"Wed",
+		"Fri",
+	]);
+	const [areas, setAreas] = useState<any[]>([]);
 
 	const companyId =
 		typeof window !== "undefined" ? sessionStorage.getItem("companyId") : null;
@@ -31,14 +38,32 @@ export default function ServiceAreaPage() {
 	const { isLoaded, loadError } = useJsApiLoader({
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
 	});
+
+	// 🧩 Load all service areas for this company
+	useEffect(() => {
+		async function loadAreas() {
+			if (!companyId) return;
+			try {
+				const res = await fetch(`/api/company/${companyId}/service-area`);
+				const data = await res.json();
+				setAreas(data.serviceAreas || []);
+			} catch (err) {
+				console.error("❌ Error loading service areas:", err);
+			}
+		}
+		loadAreas();
+	}, [companyId, open]);
+
+	// 🗺️ Load map position (first area or user location)
 	useEffect(() => {
 		async function loadServiceArea() {
 			if (!companyId) return;
 
 			try {
 				const res = await fetch(
-					`/api/company/service-area?companyId=${companyId}`
+					`/api/company/service-area/fetch?companyId=${companyId}`
 				);
+
 				const data = await res.json();
 
 				if (res.ok && data?.centerLat && data?.centerLng) {
@@ -51,14 +76,14 @@ export default function ServiceAreaPage() {
 								lat: pos.coords.latitude,
 								lng: pos.coords.longitude,
 							}),
-						() => setCenter({ lat: 45.52, lng: -122.68 }) // Fallback to Portland area
+						() => setCenter({ lat: 45.52, lng: -122.68 })
 					);
 				} else {
-					setCenter({ lat: 45.52, lng: -122.68 }); // Fallback
+					setCenter({ lat: 45.52, lng: -122.68 });
 				}
 			} catch (err) {
 				console.error("❌ Error loading service area:", err);
-				setCenter({ lat: 45.52, lng: -122.68 }); // Fallback
+				setCenter({ lat: 45.52, lng: -122.68 });
 			}
 		}
 
@@ -87,6 +112,7 @@ export default function ServiceAreaPage() {
 					centerLng: center.lng,
 					radiusKm,
 					name: "Default Service Radius",
+					availableDays,
 				}),
 			});
 
@@ -163,30 +189,65 @@ export default function ServiceAreaPage() {
 			</div>
 
 			{/* Controls */}
-			<div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-				<div className="flex items-center gap-3">
-					<label className="font-medium text-gray-700">Radius (km):</label>
-					<input
-						type="range"
-						min="1"
-						max="100"
-						value={radiusKm}
-						onChange={(e) => setRadiusKm(Number(e.target.value))}
-						className="accent-blue-600 w-40"
-					/>
-					<span className="text-gray-700 font-medium">{radiusKm} km</span>
+			<div className="flex flex-col items-center gap-8 w-full justify-center">
+				{/* Weekday selector */}
+				<div className="flex flex-col items-center gap-2">
+					<h3 className="text-lg font-semibold text-gray-800">
+						Available Days
+					</h3>
+					<p className="text-sm text-gray-500">
+						Select which days your team provides service in this area.
+					</p>
+
+					<div className="flex flex-wrap justify-center gap-2 mt-3">
+						{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+							<button
+								key={day}
+								onClick={() =>
+									setAvailableDays((prev) =>
+										prev.includes(day)
+											? prev.filter((d) => d !== day)
+											: [...prev, day]
+									)
+								}
+								className={`px-4 py-2 rounded-full border text-sm transition-all ${
+									availableDays.includes(day)
+										? "bg-blue-600 text-white border-blue-600"
+										: "bg-gray-100 text-gray-700 border-gray-200"
+								}`}
+							>
+								{day}
+							</button>
+						))}
+					</div>
 				</div>
 
-				<Button
-					onClick={handleSave}
-					disabled={loading || !companyId}
-					className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5"
-				>
-					{loading ? "Saving..." : "Save Area"}
-				</Button>
+				{/* Radius & Save */}
+				<div className="flex flex-col sm:flex-row items-center gap-4">
+					<div className="flex items-center gap-3">
+						<label className="font-medium text-gray-700">Radius (km):</label>
+						<input
+							type="range"
+							min="1"
+							max="100"
+							value={radiusKm}
+							onChange={(e) => setRadiusKm(Number(e.target.value))}
+							className="accent-blue-600 w-40"
+						/>
+						<span className="text-gray-700 font-medium">{radiusKm} km</span>
+					</div>
+
+					<Button
+						onClick={handleSave}
+						disabled={loading || !companyId}
+						className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5"
+					>
+						{loading ? "Saving..." : "Save Area"}
+					</Button>
+				</div>
 			</div>
 
-			{/* ✅ Modal Confirmation */}
+			{/* ✅ Confirmation Dialog */}
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent className="sm:max-w-md text-center bg-white text-black">
 					<DialogHeader>
@@ -207,6 +268,20 @@ export default function ServiceAreaPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* Existing Service Areas */}
+			{areas.length > 0 && (
+				<div className="mt-16 w-full">
+					<h2 className="text-2xl font-semibold text-gray-800 mb-4">
+						Existing Service Areas
+					</h2>
+					<div className="grid gap-6">
+						{areas.map((area) => (
+							<ServiceAreaCard key={area.id} area={area} />
+						))}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

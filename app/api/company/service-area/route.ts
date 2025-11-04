@@ -6,7 +6,15 @@ export async function POST(req: Request) {
 		const body = await req.json();
 		console.log("📥 Incoming body:", body);
 
-		const { companyId, type, centerLat, centerLng, radiusKm, name } = body;
+		const {
+			companyId,
+			type,
+			centerLat,
+			centerLng,
+			radiusKm,
+			name,
+			availableDays, // 👈 NEW FIELD
+		} = body;
 
 		if (!companyId || !type) {
 			console.warn("❌ Missing required fields:", { companyId, type });
@@ -16,6 +24,13 @@ export async function POST(req: Request) {
 			);
 		}
 
+		// ✅ Normalize and validate availableDays
+		const validDays = Array.isArray(availableDays)
+			? availableDays.filter((d) =>
+					["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].includes(d)
+				)
+			: [];
+
 		let serviceArea = await db.serviceArea.findFirst({
 			where: { companyId },
 		});
@@ -23,11 +38,26 @@ export async function POST(req: Request) {
 		if (serviceArea) {
 			serviceArea = await db.serviceArea.update({
 				where: { id: serviceArea.id },
-				data: { type, centerLat, centerLng, radiusKm, name },
+				data: {
+					type,
+					centerLat,
+					centerLng,
+					radiusKm,
+					name,
+					availableDays: validDays, // 👈 Save days here
+				},
 			});
 		} else {
 			serviceArea = await db.serviceArea.create({
-				data: { companyId, type, centerLat, centerLng, radiusKm, name },
+				data: {
+					companyId,
+					type,
+					centerLat,
+					centerLng,
+					radiusKm,
+					name,
+					availableDays: validDays,
+				},
 			});
 		}
 
@@ -35,6 +65,9 @@ export async function POST(req: Request) {
 		return NextResponse.json(serviceArea);
 	} catch (err: any) {
 		console.error("💥 Error in /api/company/service-area:", err);
-		return NextResponse.json({ error: err.message }, { status: 500 });
+		return NextResponse.json(
+			{ error: err.message || "Internal Server Error" },
+			{ status: 500 }
+		);
 	}
 }
