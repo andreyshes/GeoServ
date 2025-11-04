@@ -16,13 +16,12 @@ export default function ServiceAreaCard({ area }: { area: any }) {
 	const [locationName, setLocationName] = useState<string | null>(null);
 	const [lastUpdated, setLastUpdated] = useState(area.updatedAt || null);
 
-	// 🧭 Reverse-geocode coordinates → city + state
 	useEffect(() => {
 		async function fetchLocation() {
 			if (!area.centerLat || !area.centerLng) return;
 			try {
 				const res = await fetch(
-					`https://maps.googleapis.com/maps/api/geocode/json?latlng=${area.centerLat},${area.centerLng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`
+					`https://maps.googleapis.com/maps/api/geocode/json?latlng=${area.centerLat},${area.centerLng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
 				);
 				const data = await res.json();
 
@@ -48,7 +47,7 @@ export default function ServiceAreaCard({ area }: { area: any }) {
 			}
 		}
 		fetchLocation();
-	}, [area.centerLat, area.centerLng]);
+	}, [area.centerLat, area.centerLng, area.updatedAt]);
 
 	async function handleSave() {
 		setSaving(true);

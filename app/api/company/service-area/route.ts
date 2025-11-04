@@ -24,7 +24,6 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// ✅ Normalize and validate availableDays
 		const validDays = Array.isArray(availableDays)
 			? availableDays.filter((d) =>
 					["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].includes(d)
@@ -40,11 +39,10 @@ export async function POST(req: Request) {
 				where: { id: serviceArea.id },
 				data: {
 					type,
-					centerLat,
-					centerLng,
 					radiusKm,
 					name,
-					availableDays: validDays, // 👈 Save days here
+					availableDays: validDays,
+					...(centerLat && centerLng ? { centerLat, centerLng } : {}),
 				},
 			});
 		} else {
