@@ -7,7 +7,7 @@ export async function POST(
 ) {
 	try {
 		const { id } = await context.params;
-		const { availableDays } = await req.json();
+		const { availableDays, radiusKm } = await req.json();
 
 		if (!Array.isArray(availableDays) || availableDays.length === 0) {
 			return NextResponse.json(
@@ -18,7 +18,7 @@ export async function POST(
 
 		const area = await db.serviceArea.update({
 			where: { id },
-			data: { availableDays },
+			data: { availableDays, radiusKm },
 		});
 
 		return NextResponse.json(area);
