@@ -80,8 +80,7 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 
 	return (
 		<section className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-			{/* Header */}
-			<div className="flex items-center justify-between mb-4">
+				<div className="flex items-center justify-between mb-4">
 				<div>
 					<h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
 						🏢 Business Information
