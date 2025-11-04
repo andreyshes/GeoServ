@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 
 export async function POST(
 	req: Request,
-	{ params }: { params: { id: string } }
+	context: { params: Promise<{ id: string }> } // 👈 params is now a Promise
 ) {
 	try {
+		const { id } = await context.params; // 👈 must await it
 		const { availableDays } = await req.json();
 
 		if (!Array.isArray(availableDays) || availableDays.length === 0) {
@@ -16,7 +17,7 @@ export async function POST(
 		}
 
 		const area = await db.serviceArea.update({
-			where: { id: params.id },
+			where: { id },
 			data: { availableDays },
 		});
 
