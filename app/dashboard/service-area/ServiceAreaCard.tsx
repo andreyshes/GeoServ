@@ -16,7 +16,7 @@ export default function ServiceAreaCard({ area }: { area: any }) {
 	const [locationName, setLocationName] = useState<string | null>(null);
 	const [lastUpdated, setLastUpdated] = useState(area.updatedAt || null);
 
-	// Reverse-geocode coordinates → readable label
+	// 🧭 Reverse-geocode coordinates → city + state
 	useEffect(() => {
 		async function fetchLocation() {
 			if (!area.centerLat || !area.centerLng) return;
@@ -25,9 +25,24 @@ export default function ServiceAreaCard({ area }: { area: any }) {
 					`https://maps.googleapis.com/maps/api/geocode/json?latlng=${area.centerLat},${area.centerLng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`
 				);
 				const data = await res.json();
-				setLocationName(
-					data.results?.[0]?.formatted_address || "Unknown location"
-				);
+
+				if (data.results?.[0]) {
+					const comps = data.results[0].address_components;
+					const city = comps.find((c: any) =>
+						c.types.includes("locality")
+					)?.long_name;
+					const state =
+						comps.find((c: any) =>
+							c.types.includes("administrative_area_level_1")
+						)?.short_name || "";
+					const formatted =
+						city && state
+							? `${city}, ${state}`
+							: data.results[0].formatted_address || "Unknown location";
+					setLocationName(formatted);
+				} else {
+					setLocationName("Unknown location");
+				}
 			} catch {
 				setLocationName("Unknown location");
 			}
@@ -134,7 +149,11 @@ export default function ServiceAreaCard({ area }: { area: any }) {
 			</div>
 
 			<div className="flex items-center gap-3">
-				<Button onClick={handleSave} disabled={saving} className="self-start">
+				<Button
+					onClick={handleSave}
+					disabled={saving}
+					className="self-start hover:bg-blue-400 hover:text-white"
+				>
 					{saving ? "Saving..." : "Save Changes"}
 				</Button>
 				<AnimatePresence>

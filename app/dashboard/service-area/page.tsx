@@ -39,7 +39,6 @@ export default function ServiceAreaPage() {
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
 	});
 
-	// 🧩 Load all service areas for this company
 	useEffect(() => {
 		async function loadAreas() {
 			if (!companyId) return;
@@ -54,7 +53,6 @@ export default function ServiceAreaPage() {
 		loadAreas();
 	}, [companyId, open]);
 
-	// 🗺️ Load map position (first area or user location)
 	useEffect(() => {
 		async function loadServiceArea() {
 			if (!companyId) return;
@@ -102,6 +100,7 @@ export default function ServiceAreaPage() {
 
 		try {
 			setLoading(true);
+
 			const res = await fetch("/api/company/service-area", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -124,6 +123,12 @@ export default function ServiceAreaPage() {
 			}
 
 			setOpen(true);
+
+			const updated = await fetch(`/api/company/${companyId}/service-area`);
+			const json = await updated.json();
+			setAreas(json.serviceAreas || []);
+
+			console.log("✅ Service areas reloaded:", json.serviceAreas?.length);
 		} catch (e) {
 			console.error("Error saving service area:", e);
 			alert("Something went wrong while saving.");
