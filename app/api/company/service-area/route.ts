@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 			centerLng,
 			radiusKm,
 			name,
-			availableDays, // 👈 NEW FIELD
+			availableDays,
 		} = body;
 
 		if (!companyId || !type) {
