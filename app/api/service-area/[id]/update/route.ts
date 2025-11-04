@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export async function POST(
-	req: Request,
-	context: { params: Promise<{ id: string }> } // 👈 params is now a Promise
-) {
+export async function POST(req: Request, context: any) {
 	try {
-		const { id } = await context.params; // 👈 must await it
+		const { id } = await context.params;
 		const { availableDays } = await req.json();
 
 		if (!Array.isArray(availableDays) || availableDays.length === 0) {
