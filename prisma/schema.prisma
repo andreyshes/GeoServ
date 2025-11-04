@@ -47,6 +47,7 @@ model ServiceArea {
   centerLng Float?
   radiusKm  Float?
   polygon   Json?
+  availableDays  String[]   // e.g. ["Mon", "Wed", "Fri"]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   company   Company              @relation(fields: [companyId], references: [id])

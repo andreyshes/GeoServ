@@ -32,6 +32,7 @@ async function main() {
 						centerLat: 49.2827,
 						centerLng: -123.1207,
 						radiusKm: 5,
+						availableDays: ["Mon", "Wed", "Fri"],
 					},
 					{
 						name: "Burnaby Service Zone",
@@ -48,6 +49,7 @@ async function main() {
 								],
 							],
 						},
+						availableDays: ["Tue", "Thu"], // 🗓️ only on specific weekdays
 					},
 				],
 			},

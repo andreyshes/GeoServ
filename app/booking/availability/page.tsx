@@ -9,6 +9,7 @@ import "react-calendar/dist/Calendar.css";
 import { CalendarDays, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { getCoordinates } from "@/lib/geo";
 
 const ALL_SLOTS = ["7–9", "9–11", "11–1", "1–3", "3–5"];
 
@@ -34,49 +35,85 @@ export default function SchedulePage({
 	>({});
 	const [availableDays, setAvailableDays] = useState<string[]>([]);
 	const [selectedDate, setSelectedDate] = useState<ValuePiece>(null);
+	const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+		null
+	);
 	const [loadingDays, setLoadingDays] = useState(true);
 	const [loadingSlots, setLoadingSlots] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	// 🧠 Use ISO strings for consistent comparison
 	const availableSet = useMemo(() => new Set(availableDays), [availableDays]);
 
+	// 🧭 Get coordinates from query param address
 	useEffect(() => {
+		const address = searchParams.get("address");
+		if (address) {
+			(async () => {
+				const geo = await getCoordinates(address);
+				if (geo) {
+					setCoords(geo);
+				} else {
+					toast.error("Could not locate that address on the map.");
+				}
+			})();
+		} else {
+			toast.error("Missing address. Please go back and enter your location.");
+		}
+	}, [searchParams]);
+
+	useEffect(() => {
+		if (!effectiveCompanyId || !coords) return;
+
 		async function fetchAvailability() {
+			const { lat, lng } = coords!;
 			try {
 				setLoadingDays(true);
 				setError(null);
 
-				const res = await fetch("/api/availability", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						companyId: effectiveCompanyId,
-						daysAhead: 90,
-					}),
+				const today = new Date();
+				const promises = Array.from({ length: 90 }).map(async (_, i) => {
+					const date = new Date(today);
+					date.setDate(today.getDate() + i);
+					const iso = date.toISOString().split("T")[0]; // ✅ ISO-safe
+
+					const res = await fetch(`/api/availability/${iso}`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							companyId: effectiveCompanyId,
+							addressLat: lat,
+							addressLng: lng,
+						}),
+					});
+
+					const data = await res.json();
+					return {
+						dateIso: iso,
+						slots: data.availableSlots || [],
+					};
 				});
 
-				const data = await res.json();
-				if (!res.ok)
-					throw new Error(data.error || "Failed to load availability");
-
+				const results = await Promise.all(promises);
+				const available: string[] = [];
 				const map: Record<string, { slots: string[]; bookedSlots: string[] }> =
 					{};
-				(data.availability || []).forEach(
-					(entry: { date: string; slots: string[]; bookedSlots: string[] }) => {
-						map[entry.date] = {
-							slots: entry.slots || [],
-							bookedSlots: entry.bookedSlots || [],
-						};
-					}
-				);
+
+				results.forEach(({ dateIso, slots }) => {
+					map[dateIso] = { slots, bookedSlots: [] };
+					if (slots.length > 0) available.push(dateIso);
+				});
 
 				setAvailabilityMap(map);
-				setAvailableDays(data.availableDays || []);
+				setAvailableDays(available);
 
-				if (data.availableDays?.length > 0) {
-					const first = data.availableDays[0];
-					setSelectedDate(new Date(first));
-				}
+				if (available.length === 0)
+					toast.error(
+						"No available dates in your area for the next two weeks."
+					);
+
+				if (available.length > 0)
+					setSelectedDate(new Date(available[0] + "T00:00:00Z"));
 			} catch (err: any) {
 				console.error("❌ Failed to load schedule availability:", err);
 				setError(err.message || "Unable to load availability.");
@@ -86,18 +123,13 @@ export default function SchedulePage({
 		}
 
 		fetchAvailability();
-	}, [effectiveCompanyId]);
+	}, [effectiveCompanyId, coords]);
 
+	// 🕓 Slots for the selected date
 	const slotsForDate = useMemo(() => {
 		if (!(selectedDate instanceof Date)) return [];
-		const key = selectedDate.toDateString();
-		return availabilityMap[key]?.slots || [];
-	}, [selectedDate, availabilityMap]);
-
-	const bookedForDate = useMemo(() => {
-		if (!(selectedDate instanceof Date)) return [];
-		const key = selectedDate.toDateString();
-		return availabilityMap[key]?.bookedSlots || [];
+		const iso = selectedDate.toISOString().split("T")[0];
+		return availabilityMap[iso]?.slots || [];
 	}, [selectedDate, availabilityMap]);
 
 	function handleDateChange(value: Value) {
@@ -106,20 +138,35 @@ export default function SchedulePage({
 		setSelectedDate(next);
 	}
 
+	// 🕒 Handle slot selection
 	async function handleSlotSelect(slot: string) {
 		if (!(selectedDate instanceof Date) || !effectiveCompanyId) return;
 
+		if (!coords) {
+			toast.error(
+				"Missing location information. Please go back and enter your address."
+			);
+			return;
+		}
+
+		const { lat, lng } = coords;
 		const formattedDay = selectedDate.toISOString().split("T")[0];
+
 		try {
 			const res = await fetch(`/api/availability/${formattedDay}`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ companyId: effectiveCompanyId }),
+				body: JSON.stringify({
+					companyId: effectiveCompanyId,
+					addressLat: lat,
+					addressLng: lng,
+				}),
 			});
+
 			const data = await res.json();
 
 			if (!data.availableSlots?.includes(slot)) {
-				toast.error("That slot was just booked. Please pick another.");
+				toast.error("That slot was just booked or unavailable in your area.");
 				return;
 			}
 
@@ -141,6 +188,7 @@ export default function SchedulePage({
 		}
 	}
 
+	// 🌀 Loading + Error states
 	if (loadingDays)
 		return (
 			<div className="flex justify-center items-center min-h-[60vh] text-gray-500">
@@ -155,6 +203,7 @@ export default function SchedulePage({
 			</div>
 		);
 
+	// 🌟 Render UI
 	return (
 		<div className="max-w-3xl mx-auto mt-12 px-6">
 			<BookingProgress currentStep="schedule" />
@@ -165,7 +214,7 @@ export default function SchedulePage({
 					Choose Your Date & Time
 				</h2>
 				<p className="text-gray-500 mt-2 text-base">
-					Select a day on the calendar, then pick an available slot below.
+					Select a day in your service area, then pick an available slot.
 				</p>
 			</div>
 
@@ -177,29 +226,11 @@ export default function SchedulePage({
 							onChange={handleDateChange}
 							value={selectedDate}
 							minDate={new Date()}
-							className="!w-full !border-0 !text-gray-800 calendar-modern [&_.react-calendar__navigation]:flex [&_.react-calendar__navigation]:justify-between [&_.react-calendar__navigation]:items-center [&_.react-calendar__navigation button]:text-gray-600 [&_.react-calendar__navigation button]:rounded-xl [&_.react-calendar__navigation button:hover]:bg-blue-50 [&_.react-calendar__navigation__label]:font-semibold [&_.react-calendar__month-view__weekdays]:text-gray-400 [&_.react-calendar__month-view__weekdays]:uppercase [&_.react-calendar__month-view__weekdays]:tracking-wider [&_.react-calendar__month-view__weekdays_abbr]:no-underline"
-							tileClassName={({ date, view }) => {
-								if (view === "month") {
-									const isToday =
-										date.toDateString() === new Date().toDateString();
-									const isSelected =
-										selectedDate &&
-										date.toDateString() === selectedDate.toDateString();
-
-									return [
-										"transition-all duration-200 rounded-xl py-2 text-sm font-medium text-center",
-										isToday && "border border-blue-200 text-blue-600",
-										isSelected &&
-											"bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm scale-[1.02]",
-										!isSelected &&
-											!isToday &&
-											"hover:bg-blue-50 hover:text-blue-600 text-gray-700",
-									]
-										.filter(Boolean)
-										.join(" ");
-								}
-								return "";
+							tileDisabled={({ date }) => {
+								const iso = date.toISOString().split("T")[0];
+								return !availableSet.has(iso);
 							}}
+							className="!w-full !border-0 !text-gray-800 calendar-modern [&_.react-calendar__navigation]:flex [&_.react-calendar__navigation]:justify-between [&_.react-calendar__navigation]:items-center [&_.react-calendar__navigation button]:text-gray-600 [&_.react-calendar__navigation button]:rounded-xl [&_.react-calendar__navigation button:hover]:bg-blue-50 [&_.react-calendar__navigation__label]:font-semibold [&_.react-calendar__month-view__weekdays]:text-gray-400 [&_.react-calendar__month-view__weekdays]:uppercase [&_.react-calendar__month-view__weekdays]:tracking-wider [&_.react-calendar__month-view__weekdays_abbr]:no-underline"
 							prev2Label={null}
 							next2Label={null}
 						/>
@@ -233,7 +264,7 @@ export default function SchedulePage({
 					<div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-center">
 						{selectedDate &&
 							ALL_SLOTS.map((slot) => {
-								const isBooked = bookedForDate.includes(slot);
+								const isBooked = !slotsForDate.includes(slot);
 								return (
 									<motion.button
 										key={slot}
