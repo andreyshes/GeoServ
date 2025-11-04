@@ -5,6 +5,7 @@ export async function POST(req: Request) {
 	try {
 		const { companyId, name, address, addressLat, addressLng } =
 			await req.json();
+		console.log("🏢 Updating company:", { companyId, name, address });
 
 		if (!companyId) {
 			return NextResponse.json({ error: "Missing companyId" }, { status: 400 });

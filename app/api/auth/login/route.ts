@@ -15,7 +15,8 @@ export async function POST(req: Request) {
 			);
 		}
 
-		const supabase = createRouteHandlerClient({ cookies });
+		const cookieStore = cookies();
+		const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email,
@@ -30,32 +31,37 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// ✅ Ensure the Supabase client used the correct anon key
-		if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-			console.error("❌ Missing NEXT_PUBLIC_SUPABASE_ANON_KEY in environment.");
-			return NextResponse.json(
-				{ error: "Server misconfiguration — Supabase key missing" },
-				{ status: 500 }
-			);
-		}
+		const userId = data.user.id;
 
-		// ✅ Match user to company
-		const dbUser =
-			(await db.user.findUnique({
-				where: { authUserId: data.user.id },
-				include: { company: true },
-			})) ||
-			(await db.user.findUnique({
-				where: { email: data.user.email! },
-				include: { company: true },
-			}));
+		let dbUser = await db.user.findUnique({
+			where: { authUserId: userId },
+			include: { company: true },
+		});
 
-		if (!dbUser || !dbUser.company) {
-			console.warn("⚠️ User not linked to a company:", email);
-			return NextResponse.json(
-				{ error: "User not linked to a company" },
-				{ status: 404 }
-			);
+		if (!dbUser)
+			dbUser = await db.user.findUnique({
+				where: { email },
+				include: { company: true },
+			});
+
+		// ✅ Auto-create company if missing
+		if (!dbUser?.company) {
+			console.warn("⚠️ No company linked — creating placeholder:", email);
+
+			const newCompany = await db.company.create({
+				data: {
+					name: email.split("@")[0],
+					domain: email.split("@")[1],
+				},
+			});
+
+			dbUser = await db.user.update({
+				where: { id: dbUser!.id },
+				data: { companyId: newCompany.id },
+				include: { company: true },
+			});
+
+			console.log(`🏢 Linked new company ${newCompany.name} to ${email}`);
 		}
 
 		console.log("✅ Login success for:", dbUser.email);
