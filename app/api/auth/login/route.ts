@@ -44,7 +44,6 @@ export async function POST(req: Request) {
 				include: { company: true },
 			});
 
-		// ✅ Auto-create company if missing
 		if (!dbUser?.company) {
 			console.warn("⚠️ No company linked — creating placeholder:", email);
 

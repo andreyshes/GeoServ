@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { toast } from "sonner";
@@ -17,8 +17,11 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 	const [saving, setSaving] = useState(false);
 	const [editMode, setEditMode] = useState(false);
 
+	const addressInputRef = useRef<HTMLInputElement | null>(null);
+
 	useEffect(() => {
 		if (!companyId) return;
+
 		(async () => {
 			try {
 				setLoading(true);
@@ -35,6 +38,28 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 			}
 		})();
 	}, [companyId]);
+
+	useEffect(() => {
+		if (!editMode || !addressInputRef.current) return;
+		if (!(window as any).google) return;
+
+		const autocomplete = new (window as any).google.maps.places.Autocomplete(
+			addressInputRef.current,
+			{ types: ["geocode"], fields: ["formatted_address", "geometry"] }
+		);
+
+		autocomplete.addListener("place_changed", () => {
+			const place = autocomplete.getPlace();
+			if (!place.formatted_address || !place.geometry) return;
+
+			setAddress(place.formatted_address);
+			toast.success("📍 Address selected!");
+		});
+
+		return () => {
+			(window as any).google.maps.event.clearInstanceListeners(autocomplete);
+		};
+	}, [editMode]);
 
 	async function handleSave() {
 		if (!name.trim() || !address.trim()) {
@@ -61,7 +86,7 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 
 			if (!res.ok) throw new Error("Failed to save company info");
 
-			toast.success("Business information updated successfully!");
+			toast.success("✅ Business information updated successfully!");
 			setEditMode(false);
 		} catch (err) {
 			console.error("❌ Save error:", err);
@@ -80,7 +105,7 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 
 	return (
 		<section className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-				<div className="flex items-center justify-between mb-4">
+			<div className="flex items-center justify-between mb-4">
 				<div>
 					<h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
 						🏢 Business Information
@@ -98,7 +123,6 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 				)}
 			</div>
 
-			{/* Content */}
 			{!editMode ? (
 				<div className="space-y-3 text-gray-700">
 					<div>
@@ -131,9 +155,11 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 							Business Address
 						</label>
 						<Input
+							ref={addressInputRef}
 							placeholder="Start typing your address..."
 							value={address}
 							onChange={(e) => setAddress(e.target.value)}
+							className="mt-1"
 						/>
 					</div>
 

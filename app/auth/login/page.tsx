@@ -3,20 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { XCircle } from "lucide-react";
+import { toast } from "sonner"; // ⭐ new
+import { motion } from "framer-motion";
 
 export default function LoginPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const router = useRouter();
 
 	async function handleLogin(e: React.FormEvent) {
 		e.preventDefault();
 		setLoading(true);
-		setError(null);
 
 		try {
 			const res = await fetch("/api/auth/login", {
@@ -29,31 +27,33 @@ export default function LoginPage() {
 			try {
 				data = await res.json();
 			} catch {
-				setError("Server error — please try again.");
+				toast.error("Server error — please try again.");
 				setLoading(false);
 				return;
 			}
 
 			if (!res.ok || !data.success) {
-				alert(data.error || "Invalid email or password");
+				toast.error(data.error || "Invalid email or password", {
+					duration: 3000,
+					description: "Double-check your credentials and try again.",
+				});
 				setLoading(false);
 				return;
 			}
 
+			// Store session data
 			sessionStorage.setItem("companyId", data.user.companyId);
 			sessionStorage.setItem("userEmail", data.user.email);
 			sessionStorage.setItem("userRole", data.user.role);
 
-			console.log("✅ Stored company info:", {
-				companyId: data.user.companyId,
-				email: data.user.email,
-				role: data.user.role,
+			toast.success("Login successful!", {
+				description: "Redirecting to your dashboard...",
 			});
 
 			router.push("/dashboard");
 		} catch (err) {
 			console.error("❌ Login failed:", err);
-			setError("Something went wrong. Please try again.");
+			toast.error("Something went wrong. Please try again.");
 		} finally {
 			setLoading(false);
 		}
@@ -126,39 +126,6 @@ export default function LoginPage() {
 				</div>
 			</div>
 
-			{/* Animated Error Modal */}
-			<AnimatePresence>
-				{error && (
-					<motion.div
-						initial={{ opacity: 0, y: 40 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: 20 }}
-						transition={{ duration: 0.25 }}
-						className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50"
-					>
-						<motion.div
-							initial={{ scale: 0.9, opacity: 0 }}
-							animate={{ scale: 1, opacity: 1 }}
-							exit={{ scale: 0.9, opacity: 0 }}
-							className="bg-neutral-900 border border-white/10 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-[90%]"
-						>
-							<XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-							<h2 className="text-xl font-semibold text-white mb-2">
-								Login Failed
-							</h2>
-							<p className="text-neutral-400 mb-6">{error}</p>
-							<button
-								onClick={() => setError(null)}
-								className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 transition-all text-white py-2 rounded-xl font-medium shadow-[0_4px_20px_rgb(0_0_0_/_0.25)]"
-							>
-								Try Again
-							</button>
-						</motion.div>
-					</motion.div>
-				)}
-			</AnimatePresence>
-
-			{/* Bottom fade */}
 			<div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 		</div>
 	);
