@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
 	GoogleMap,
 	CircleF,
@@ -31,7 +33,7 @@ export default function ServiceAreaPage() {
 		"Fri",
 	]);
 	const [areas, setAreas] = useState<any[]>([]);
-
+	const router = useRouter();
 	const companyId =
 		typeof window !== "undefined" ? sessionStorage.getItem("companyId") : null;
 
@@ -144,7 +146,15 @@ export default function ServiceAreaPage() {
 		);
 
 	return (
-		<div className="max-w-5xl mx-auto px-6 py-20 flex flex-col items-center">
+		<main className="max-w-5xl mx-auto px-6 py-20 flex flex-col items-center">
+			<Button
+				onClick={() => router.back()}
+				className="absolute left-6 top-24 flex items-center z-20 hover:bg-gray-200"
+				variant="ghost"
+			>
+				<ArrowLeft className="h-5 w-5 text-gray-600 hover:text-gray-800" />
+			</Button>
+
 			<h1 className="text-3xl font-semibold text-gray-800 mb-2 text-center">
 				Service Area Settings
 			</h1>
@@ -287,6 +297,6 @@ export default function ServiceAreaPage() {
 					</div>
 				</div>
 			)}
-		</div>
+		</main>
 	);
 }

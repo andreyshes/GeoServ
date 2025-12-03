@@ -175,6 +175,7 @@ export default function BusinessInfoCard({ companyId }: BusinessInfoCardProps) {
 							variant="outline"
 							onClick={() => setEditMode(false)}
 							disabled={saving}
+							className="hover:bg-gray-200"
 						>
 							Cancel
 						</Button>

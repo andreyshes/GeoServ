@@ -38,7 +38,6 @@ export default function AddressPage({
 	const embedPath =
 		embedded && effectiveCompanyId ? `/embed/${effectiveCompanyId}` : null;
 
-	// ✅ Handle form submission
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(undefined);

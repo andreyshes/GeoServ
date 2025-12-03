@@ -49,7 +49,6 @@ export default function ServicesSection({
 		<div className="rounded-xl border bg-white shadow-sm overflow-hidden">
 			{/* HEADER */}
 			<div className="p-4 border-b bg-gray-50/50 flex items-center justify-between">
-				<h2 className="font-semibold text-gray-800">Services</h2>
 				<span className="text-sm text-gray-400">
 					{services.length} service{services.length !== 1 && "s"}
 				</span>
@@ -82,7 +81,10 @@ export default function ServicesSection({
 					}
 					className="w-32"
 				/>
-				<Button onClick={addService}>
+				<Button
+					onClick={addService}
+					className="hover:bg-blue-400 hover:text-white"
+				>
 					<Plus className="w-4 h-4" /> Add
 				</Button>
 			</div>
@@ -118,7 +120,7 @@ export default function ServicesSection({
 										</Button>
 									</AlertDialogTrigger>
 
-									<AlertDialogContent>
+									<AlertDialogContent className="bg-white">
 										<AlertDialogHeader>
 											<AlertDialogTitle>Delete Service</AlertDialogTitle>
 											<AlertDialogDescription>
@@ -161,7 +163,7 @@ export default function ServicesSection({
 										</Button>
 									</DialogTrigger>
 
-									<DialogContent>
+									<DialogContent className="bg-white">
 										<DialogHeader>
 											<DialogTitle>Edit Service</DialogTitle>
 										</DialogHeader>

@@ -26,9 +26,6 @@ export default function BookingsTable({
 		<div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
 			{/* HEADER */}
 			<div className="p-4 flex items-center justify-between border-b border-gray-100 bg-gray-50/50">
-				<h2 className="font-semibold text-gray-800 flex items-center gap-2">
-					Recent Bookings
-				</h2>
 				<span className="text-sm text-gray-400">
 					{bookings.length} record{bookings.length !== 1 && "s"}
 				</span>
