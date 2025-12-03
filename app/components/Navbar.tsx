@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useEffect, useState } from "react";
+
 import { Button } from "@/app/components/ui/button";
 import {
 	DropdownMenu,
@@ -13,27 +14,24 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
+
 import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage,
 } from "@/app/components/ui/avatar";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-export default function Navbar() {
+export default function Navbar({ user: serverUser }: { user: any }) {
 	const router = useRouter();
 	const supabase = createClientComponentClient();
-	const [user, setUser] = useState<any>(null);
 
-	// ✅ Load user and subscribe to auth state
+	const [user, setUser] = useState(serverUser);
 	useEffect(() => {
-		async function loadUser() {
-			const { data } = await supabase.auth.getUser();
-			setUser(data?.user ?? null);
-		}
+		setUser(serverUser);
+	}, [serverUser]);
 
-		loadUser();
-
+	useEffect(() => {
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((_event, session) => {
@@ -41,7 +39,7 @@ export default function Navbar() {
 		});
 
 		return () => subscription.unsubscribe();
-	}, [supabase]);
+	}, []);
 
 	async function handleLogout() {
 		await supabase.auth.signOut();
@@ -63,33 +61,32 @@ export default function Navbar() {
 				</Link>
 
 				<div className="flex items-center gap-3">
-					{role !== "company" && (
+					{(role === "company" || role === "ADMIN") && (
 						<Button
 							asChild
-							variant="outline"
-							className="rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-100 transition-colors"
+							className="rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white"
 						>
-							<Link href="/booking/address">Book Now</Link>
+							<Link href="/dashboard">Dashboard</Link>
 						</Button>
 					)}
 
-					{role === "company" ||
-						(role === "ADMIN" && (
+					{!user ? (
+						<div className="flex items-center gap-3 ml-auto">
 							<Button
 								asChild
-								className="rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white transition-all shadow-sm hover:opacity-80"
+								className="rounded-lg bg-gray-600 hover:bg-gray-400 text-white px-5 py-2"
 							>
-								<Link href="/dashboard">Dashboard</Link>
+								<Link href="/auth/register">Get Started</Link>
 							</Button>
-						))}
 
-					{!user ? (
-						<Button
-							asChild
-							className="rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white transition-all shadow-sm hover:shadow-md"
-						>
-							<Link href="/auth/login">Login</Link>
-						</Button>
+							<Button
+								asChild
+								variant="outline"
+								className="rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+							>
+								<Link href="/auth/login">Login</Link>
+							</Button>
+						</div>
 					) : (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -103,9 +100,6 @@ export default function Navbar() {
 											{user.email?.[0]?.toUpperCase() || "U"}
 										</AvatarFallback>
 									</Avatar>
-									<span className="text-sm font-medium text-neutral-800 hidden sm:inline">
-										{user.user_metadata?.name || "Admin"}
-									</span>
 								</button>
 							</DropdownMenuTrigger>
 
@@ -125,7 +119,7 @@ export default function Navbar() {
 
 								<DropdownMenuItem
 									onClick={handleLogout}
-									className="cursor-pointer flex items-center gap-2 text-red-600 hover:bg-red-50 focus:bg-red-50"
+									className="cursor-pointer flex items-center gap-2 text-red-600 hover:bg-red-50"
 								>
 									<LogOut className="h-4 w-4" /> Log out
 								</DropdownMenuItem>

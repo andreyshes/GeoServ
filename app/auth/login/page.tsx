@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { toast } from "sonner"; // ⭐ new
-import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 export default function LoginPage() {
 	const [email, setEmail] = useState("");
@@ -41,7 +40,6 @@ export default function LoginPage() {
 				return;
 			}
 
-			// Store session data
 			sessionStorage.setItem("companyId", data.user.companyId);
 			sessionStorage.setItem("userEmail", data.user.email);
 			sessionStorage.setItem("userRole", data.user.role);
