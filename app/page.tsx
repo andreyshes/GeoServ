@@ -233,7 +233,7 @@ export default function HomePage() {
 						variant="primary"
 						className="h-14 px-8 text-lg rounded-full"
 					>
-						<Link href="/booking/address" className="flex items-center gap-2">
+						<Link href="/auth/register" className="flex items-center gap-2">
 							<span>Get Started</span>
 							<ChevronRight className="h-5 w-5" />
 						</Link>
