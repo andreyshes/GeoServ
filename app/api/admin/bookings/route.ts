@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { z } from "zod";
+
+type ApiResponse<T> = {
+	success: boolean;
+	data?: T;
+	error?: string;
+};
 
 export async function GET() {
 	try {
@@ -9,11 +16,18 @@ export async function GET() {
 				customer: true,
 			},
 		});
-		return NextResponse.json({ bookings });
+
+		return NextResponse.json<ApiResponse<typeof bookings>>({
+			success: true,
+			data: bookings,
+		});
 	} catch (err) {
 		console.error("Error loading bookings:", err);
-		return NextResponse.json(
-			{ error: "Internal Server Error" },
+		return NextResponse.json<ApiResponse<null>>(
+			{
+				success: false,
+				error: "Internal server error",
+			},
 			{ status: 500 }
 		);
 	}
