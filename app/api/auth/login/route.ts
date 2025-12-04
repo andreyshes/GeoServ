@@ -2,32 +2,55 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { db } from "@/lib/db";
+import { z } from "zod";
+
+type ApiResponse<T> = {
+	success: boolean;
+	data?: T;
+	error?: string;
+};
+
+type LoginResponse = {
+	id: string;
+	email: string;
+	role: string;
+	companyId: string;
+	companyName: string;
+};
+
+const userLoginSchema = z.object({
+	email: z.string().trim().pipe(z.email()),
+	password: z.string().min(6),
+});
 
 export async function POST(req: Request) {
 	try {
-		const { email, password } = await req.json();
+		// Parse and validate request body
+		const json = await req.json();
+		const { email, password } = userLoginSchema.parse(json);
 		console.log("📥 Login attempt:", email);
 
-		if (!email || !password) {
-			return NextResponse.json(
-				{ error: "Missing email or password" },
-				{ status: 400 }
-			);
-		}
-
+		// Initialize Supabase client
 		const cookieStore = cookies();
 		const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
+		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
+			{
+				email,
+				password,
+			}
+		);
 
-		if (error || !data.user) {
-			console.error("❌ Invalid login:", error?.message);
-			return NextResponse.json(
-				{ error: "Invalid email or password" },
-				{ status: 401 }
+		// Handle authentication errors
+		if (SignInError || !data.user) {
+			return (
+				NextResponse.json<ApiResponse<null>>({
+					success: false,
+					error: "Invalid email or password",
+				}),
+				{
+					status: 401,
+				}
 			);
 		}
 
@@ -65,10 +88,9 @@ export async function POST(req: Request) {
 
 		console.log("✅ Login success for:", dbUser.email);
 
-		return NextResponse.json({
+		return NextResponse.json<ApiResponse<LoginResponse>>({
 			success: true,
-			message: "Login successful",
-			user: {
+			data: {
 				id: dbUser.id,
 				email: dbUser.email,
 				role: dbUser.role,
@@ -78,6 +100,9 @@ export async function POST(req: Request) {
 		});
 	} catch (err: any) {
 		console.error("❌ Login route crashed:", err.message);
-		return NextResponse.json({ error: err.message }, { status: 500 });
+		return NextResponse.json<ApiResponse<null>>(
+			{ success: false, error: err.message || "Internal server error" },
+			{ status: 500 }
+		);
 	}
 }
