@@ -7,7 +7,6 @@ import useBookings from "./hooks/useBookings";
 import useServices from "./hooks/useServices";
 import useRealtimeBookings from "./hooks/useRealTimeBookings";
 
-// COMPONENTS
 import StripeConnectCard from "@/app/dashboard/components/StripeConnectCard";
 import BusinessInfoCard from "@/app/dashboard/components/BusinessInfoCard";
 import StatsCards from "@/app/dashboard/components/StatsCards";

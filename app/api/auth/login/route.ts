@@ -25,32 +25,24 @@ const userLoginSchema = z.object({
 
 export async function POST(req: Request) {
 	try {
-		// Parse and validate request body
 		const json = await req.json();
+
 		const { email, password } = userLoginSchema.parse(json);
+
 		console.log("📥 Login attempt:", email);
 
-		// Initialize Supabase client
 		const cookieStore = cookies();
+
 		const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
 		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
-			{
-				email,
-				password,
-			}
+			{ email, password }
 		);
 
-		// Handle authentication errors
 		if (SignInError || !data.user) {
-			return (
-				NextResponse.json<ApiResponse<null>>({
-					success: false,
-					error: "Invalid email or password",
-				}),
-				{
-					status: 401,
-				}
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "Invalid email or password" },
+				{ status: 401 }
 			);
 		}
 
@@ -61,30 +53,41 @@ export async function POST(req: Request) {
 			include: { company: true },
 		});
 
-		if (!dbUser)
+		if (!dbUser) {
 			dbUser = await db.user.findUnique({
 				where: { email },
 				include: { company: true },
 			});
+		}
 
-		if (!dbUser?.company) {
-			console.warn("⚠️ No company linked — creating placeholder:", email);
+		if (!dbUser) {
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "User profile not found after sign-in" },
+				{ status: 404 }
+			);
+		}
+
+		if (!dbUser.company) {
+			const companyDomain = email.split("@").pop() || "default";
+			const companyName = email.split("@")[0];
 
 			const newCompany = await db.company.create({
 				data: {
-					name: email.split("@")[0],
-					domain: email.split("@")[1],
+					name: companyName,
+					domain: companyDomain,
 				},
 			});
 
 			dbUser = await db.user.update({
-				where: { id: dbUser!.id },
+				where: { id: dbUser.id },
 				data: { companyId: newCompany.id },
 				include: { company: true },
 			});
-
-			console.log(`🏢 Linked new company ${newCompany.name} to ${email}`);
 		}
+
+		const companyName = dbUser.company
+			? dbUser.company.name
+			: "Unknown Company";
 
 		console.log("✅ Login success for:", dbUser.email);
 
@@ -95,13 +98,19 @@ export async function POST(req: Request) {
 				email: dbUser.email,
 				role: dbUser.role,
 				companyId: dbUser.companyId,
-				companyName: dbUser.company.name,
+				companyName: companyName,
 			},
 		});
-	} catch (err: any) {
-		console.error("❌ Login route crashed:", err.message);
+	} catch (err) {
+		console.error("❌ Login route crashed:", err);
+		if (err instanceof z.ZodError) {
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "Invalid input data" },
+				{ status: 400 }
+			);
+		}
 		return NextResponse.json<ApiResponse<null>>(
-			{ success: false, error: err.message || "Internal server error" },
+			{ success: false, error: "Internal server error" },
 			{ status: 500 }
 		);
 	}

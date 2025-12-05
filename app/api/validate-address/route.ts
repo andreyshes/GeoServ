@@ -1,14 +1,29 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCoordinates } from "@/lib/geo";
+import { z } from "zod";
+
+type ApiResponse<T> = { success: boolean; data?: T; error?: string };
+
+const addressSchema = z.object({
+	address: z.string().min(1, "Address is required"),
+});
+
+function errorResponse(message: string, status = 400) {
+	return NextResponse.json<ApiResponse<null>>(
+		{ success: false, error: message },
+		{ status }
+	);
+}
 
 export async function POST(req: Request) {
 	try {
-		const { address } = await req.json();
+		const { address } = addressSchema.parse(await req.json());
 
 		const coords = await getCoordinates(address);
+
 		if (!coords) {
-			return NextResponse.json({ valid: false, reason: "Invalid address" });
+			return errorResponse("Invalid address", 400);
 		}
 
 		const { lat, lng } = coords;
@@ -73,11 +88,11 @@ export async function POST(req: Request) {
 			}
 		}
 
-		// ❌ Not found
 		return NextResponse.json({ valid: false });
-	} catch (err: any) {
-		console.error("Validation error:", err);
-		return NextResponse.json({ valid: false, error: err.message });
+	} catch (err) {
+		if (err instanceof z.ZodError) {
+			return errorResponse(err.issues[0].message, 400);
+		}
 	}
 }
 

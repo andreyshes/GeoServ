@@ -231,7 +231,7 @@ export default function HomePage() {
 					<Button
 						asChild
 						variant="primary"
-						className="h-14 px-8 text-lg rounded-full"
+						className="h-14 px-8 text-lg rounded-full "
 					>
 						<Link href="/auth/register" className="flex items-center gap-2">
 							<span>Get Started</span>

@@ -1,58 +1,64 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { z } from "zod";
 import { isWithinServiceArea } from "@/lib/geo-utils";
 import { getCoordinates } from "@/lib/geo";
 
 const ALL_SLOTS = ["7–9", "9–11", "11–1", "1–3", "3–5"];
+
+const ParamsSchema = z.object({
+	day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+const BodySchema = z.object({
+	companyId: z.string().min(1),
+	address: z.string().optional(),
+	addressLat: z.number().optional(),
+	addressLng: z.number().optional(),
+});
+
+type SlotCheckResponse = {
+	availableSlots: string[];
+	matchedAreas: Array<{
+		id: string;
+		name: string;
+		type: string;
+		availableDays: string[] | null;
+	}>;
+	reason?: string;
+};
+
+type ApiResponse<T> = {
+	success: boolean;
+	data?: T;
+	error?: string;
+};
 
 export async function POST(
 	req: Request,
 	context: { params: Promise<{ day: string }> }
 ) {
 	try {
-		const { day } = await context.params;
-		const body = await req.json();
+		const { day } = ParamsSchema.parse(await context.params);
+		const body = BodySchema.parse(await req.json());
 
-		const {
-			companyId,
-			address,
-			addressLat,
-			addressLng,
-		}: {
-			companyId?: string;
-			address?: string;
-			addressLat?: number;
-			addressLng?: number;
-		} = body;
+		let { companyId, address, addressLat, addressLng } = body;
 
-		console.log("🛰️ Checking date:", day);
-		console.log("📥 Incoming body:", body);
-
-		if (!companyId || !day) {
-			return NextResponse.json(
-				{ error: "Missing companyId or day" },
-				{ status: 400 }
-			);
-		}
-
-		let lat = addressLat;
-		let lng = addressLng;
-
-		if ((!lat || !lng) && address) {
+		if ((!addressLat || !addressLng) && address) {
 			const geo = await getCoordinates(address);
 			if (!geo) {
-				return NextResponse.json(
-					{ error: "Invalid address — could not geocode" },
+				return NextResponse.json<ApiResponse<null>>(
+					{ success: false, error: "Invalid address — could not geocode" },
 					{ status: 400 }
 				);
 			}
-			lat = geo.lat;
-			lng = geo.lng;
+			addressLat = geo.lat;
+			addressLng = geo.lng;
 		}
 
-		if (!lat || !lng) {
-			return NextResponse.json(
-				{ error: "Missing valid coordinates or address" },
+		if (!addressLat || !addressLng) {
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "Missing valid coordinates or address" },
 				{ status: 400 }
 			);
 		}
@@ -63,21 +69,22 @@ export async function POST(
 		});
 
 		const matchingAreas = serviceAreas.filter((area) =>
-			isWithinServiceArea(lat!, lng!, area)
+			isWithinServiceArea(addressLat!, addressLng!, area)
 		);
 
 		if (matchingAreas.length === 0) {
-			return NextResponse.json({
-				availableSlots: [],
-				reason: "OUT_OF_SERVICE_AREA",
+			return NextResponse.json<ApiResponse<SlotCheckResponse>>({
+				success: true,
+				data: {
+					availableSlots: [],
+					matchedAreas: [],
+					reason: "OUT_OF_SERVICE_AREA",
+				},
 			});
 		}
 
 		const weekday = new Date(`${day}T00:00:00Z`)
-			.toLocaleDateString("en-US", {
-				weekday: "short",
-				timeZone: "UTC",
-			})
+			.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
 			.slice(0, 3);
 
 		const allowed = matchingAreas.some((a) =>
@@ -85,9 +92,13 @@ export async function POST(
 		);
 
 		if (!allowed) {
-			return NextResponse.json({
-				availableSlots: [],
-				reason: "DAY_NOT_IN_SCHEDULE",
+			return NextResponse.json<ApiResponse<SlotCheckResponse>>({
+				success: true,
+				data: {
+					availableSlots: [],
+					matchedAreas: [],
+					reason: "DAY_NOT_IN_SCHEDULE",
+				},
 			});
 		}
 
@@ -109,22 +120,29 @@ export async function POST(
 			(slot) => !bookedSlots.includes(slot)
 		);
 
-		return NextResponse.json({
-			availableSlots,
-			matchedAreas: matchingAreas.map((a) => ({
-				id: a.id,
-				name: a.name,
-				type: a.type,
-				availableDays: a.availableDays,
-			})),
-		});
-	} catch (err: any) {
-		console.error("❌ API Error:", err);
-		return NextResponse.json(
-			{
-				error: "Internal Server Error",
-				details: err?.message,
+		return NextResponse.json<ApiResponse<SlotCheckResponse>>({
+			success: true,
+			data: {
+				availableSlots,
+				matchedAreas: matchingAreas.map((a) => ({
+					id: a.id,
+					name: a.name,
+					type: a.type,
+					availableDays: a.availableDays,
+				})),
 			},
+		});
+	} catch (err) {
+		if (err instanceof z.ZodError) {
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "Invalid request data" },
+				{ status: 400 }
+			);
+		}
+
+		console.error("❌ API Error:", err);
+		return NextResponse.json<ApiResponse<null>>(
+			{ success: false, error: "Internal Server Error" },
 			{ status: 500 }
 		);
 	}

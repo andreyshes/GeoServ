@@ -74,7 +74,7 @@ export default function Navbar({ user: serverUser }: { user: any }) {
 						<div className="flex items-center gap-3 ml-auto">
 							<Button
 								asChild
-								className="rounded-lg bg-gray-600 hover:bg-gray-400 text-white px-5 py-2"
+								className="rounded-lg bg-black hover:opacity-50 text-white px-5 py-2"
 							>
 								<Link href="/auth/register">Get Started</Link>
 							</Button>
