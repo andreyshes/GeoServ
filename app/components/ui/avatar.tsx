@@ -25,11 +25,12 @@ export function Avatar({
 export function AvatarImage({
 	src,
 	alt,
+	className,
 }: {
 	src?: string | null;
 	alt?: string;
+	className?: string;
 }) {
-	// ✅ Only render <Image> if src is truthy
 	if (!src) return null;
 
 	return (
@@ -37,14 +38,25 @@ export function AvatarImage({
 			src={src}
 			alt={alt || "Avatar"}
 			fill
-			className="aspect-square h-full w-full object-cover"
+			className={cn("aspect-square h-full w-full object-cover", className)}
 		/>
 	);
 }
 
-export function AvatarFallback({ children }: { children?: React.ReactNode }) {
+export function AvatarFallback({
+	children,
+	className,
+}: {
+	children?: React.ReactNode;
+	className?: string;
+}) {
 	return (
-		<div className="flex h-full w-full items-center justify-center bg-neutral-300 text-neutral-700 text-sm font-medium">
+		<div
+			className={cn(
+				"flex h-full w-full items-center justify-center bg-neutral-300 text-neutral-700 text-sm font-medium",
+				className
+			)}
+		>
 			{children}
 		</div>
 	);
