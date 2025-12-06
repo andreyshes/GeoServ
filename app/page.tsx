@@ -3,10 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-	motion,
-	useScroll,
-	useTransform,
-	AnimatePresence,
+	motion
 } from "framer-motion";
 import {
 	MapPin,

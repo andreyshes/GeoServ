@@ -1,65 +1,34 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-import { supabase } from "../../lib/supabaseClient";
-
+import { redirect } from "next/navigation";
+import { supabaseServer } from "@/lib/supabaseServer";
 import DashboardClient from "./DashboardClient";
 
-export default function DashboardPage() {
-	const [loading, setLoading] = useState(true);
-	const [companyId, setCompanyId] = useState<string | null>(null);
+export default async function DashboardPage() {
+	const supabase = await supabaseServer();
 
-	const routerReplace = (path: string) => {
-		window.location.replace(path);
-	};
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
 
-	useEffect(() => {
-		async function checkAuth() {
-			await new Promise((resolve) => setTimeout(resolve, 300));
-
-			try {
-				const {
-					data: { user },
-					error,
-				} = await supabase.auth.getUser();
-
-				if (error || !user) {
-					routerReplace("/auth/login");
-					return;
-				}
-
-				const userMetadata = user.user_metadata || user.app_metadata;
-
-				if (!["ADMIN", "COMPANY"].includes(userMetadata.role)) {
-					console.error(
-						"Unauthorized: Only company accounts can access the dashboard."
-					);
-					routerReplace("/auth/login");
-					return;
-				}
-
-				setCompanyId(userMetadata.companyId);
-			} catch (err) {
-				console.error("Error loading user session in dashboard:", err);
-				routerReplace("/auth/login");
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		checkAuth();
-	}, []);
-
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center min-h-screen bg-neutral-900 text-gray-400">
-				Loading dashboard...
-			</div>
-		);
+	if (!user) {
+		redirect("/auth/login");
 	}
 
-	if (!companyId) return null;
 
+	const meta = user.user_metadata || user.app_metadata;
+
+
+	if (!["ADMIN", "COMPANY"].includes(meta.role)) {
+		redirect("/auth/login");
+	}
+
+
+	const companyId = meta.companyId;
+
+
+	if (!companyId) {
+		redirect("/auth/login");
+	}
+
+	// Pass companyId to your client component
 	return <DashboardClient companyId={companyId} />;
 }

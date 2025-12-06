@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseBrowser } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
 export type Booking = {
@@ -27,10 +27,11 @@ export default function useBookings(companyId: string) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	// debounce for realtime spam
-	const fetchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-	/** ⬇ FULL FETCH (used initially + pagination) */
+
+	const fetchTimeout = useRef<NodeJS.Timeout | null>(null);
+	const supabase = supabaseBrowser();
+
 	async function fetchBookings() {
 		try {
 			setLoading(true);
@@ -81,7 +82,7 @@ export default function useBookings(companyId: string) {
 		}
 	}
 
-	/** ⬇ REALTIME LOGIC (insert/update/delete) */
+
 	useEffect(() => {
 		if (!companyId) return;
 
@@ -142,7 +143,7 @@ export default function useBookings(companyId: string) {
 		});
 	}
 
-	/** ⬇ Fetch on mount + page change */
+
 	useEffect(() => {
 		fetchBookings();
 	}, [page, companyId]);

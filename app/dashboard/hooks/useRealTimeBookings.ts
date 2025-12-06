@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseBrowser } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
 export default function useRealtimeBookings(
@@ -10,7 +10,7 @@ export default function useRealtimeBookings(
 ) {
 	useEffect(() => {
 		if (!companyId) return;
-
+		const supabase = supabaseBrowser();
 		const channel = supabase
 			.channel("booking-updates")
 			.on(
