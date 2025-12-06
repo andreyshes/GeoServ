@@ -23,8 +23,9 @@ export async function GET(req: Request) {
 			where: { id: booking.id },
 			data: { status: "canceled" },
 		});
+		const supabase = await supabaseServer();
 
-		await supabaseServer.channel("booking-updates").send({
+		await supabase.channel("booking-updates").send({
 			type: "broadcast",
 			event: "booking-updated",
 			payload: {

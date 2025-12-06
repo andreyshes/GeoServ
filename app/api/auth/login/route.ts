@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { supabaseServer } from "@/lib/supabaseServer";

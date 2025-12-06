@@ -26,7 +26,6 @@ function errorResponse(message: string, status = 400) {
 
 export async function POST(req: Request) {
 	try {
-		// Validate request body
 		const { companyName, email, password, address } = registerSchema.parse(
 			await req.json()
 		);

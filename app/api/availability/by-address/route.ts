@@ -14,7 +14,6 @@ type ApiResponse<T> = {
 const LOOKAHEAD_DAYS = 60;
 const SLOTS_PER_DAY = 5;
 
-
 const BodySchema = z.object({
 	companyId: z.string().min(1, "Company ID is required"),
 	address: z.string().min(1, "Address is required"),
@@ -84,18 +83,15 @@ export async function POST(req: Request) {
 			include: { zipCodes: true },
 		});
 
-		const matchingAreas = serviceAreas.filter((area) =>
+		type ServiceAreaType = typeof serviceAreas[number];
+
+
+		const matchingAreas = serviceAreas.filter((area: ServiceAreaType) =>
 			isWithinServiceArea(lat, lng, area)
 		);
 
 		if (matchingAreas.length === 0) {
-			return NextResponse.json<
-				ApiResponse<{
-					availableDays: string[];
-					fullyBookedDays: string[];
-					reason: string;
-				}>
-			>({
+			return NextResponse.json<ApiResponse<any>>({
 				success: true,
 				data: {
 					availableDays: [],
@@ -105,8 +101,9 @@ export async function POST(req: Request) {
 			});
 		}
 
-		const allowedWeekdays = new Set(
-			matchingAreas.flatMap((a) => a.availableDays || [])
+		// FIXED: Set<string>
+		const allowedWeekdays: Set<string> = new Set(
+			matchingAreas.flatMap((a: ServiceAreaType) => a.availableDays || [])
 		);
 
 		const today = startOfDay(new Date());
@@ -136,7 +133,7 @@ export async function POST(req: Request) {
 			data: {
 				availableDays,
 				fullyBookedDays,
-				areas: matchingAreas.map((a) => ({
+				areas: matchingAreas.map((a: ServiceAreaType) => ({
 					id: a.id,
 					name: a.name,
 					availableDays: a.availableDays,
