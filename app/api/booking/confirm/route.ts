@@ -58,8 +58,8 @@ export async function GET(req: Request) {
 			});
 			console.log(`📧 Confirmation email sent to ${booking.customer.email}`);
 		}
-
-		await supabaseServer.channel("booking-updates").send({
+		const supabase = await supabaseServer()
+		await supabase.channel("booking-updates").send({
 			type: "broadcast",
 			event: "booking-updated",
 			payload: {

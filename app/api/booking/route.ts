@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// ✅ 3. Resolve coordinates & address
+
 		let address: string | null = rawAddress ?? null;
 		let lat: number | null = null;
 		let lng: number | null = null;
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
 			lat = location.lat;
 			lng = location.lng;
 		} else if (address && !lat && !lng) {
-			// fallback: geocode the address
+
 			const coords = await getCoordinates(address);
 			if (coords) {
 				lat = coords.lat;
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// ✅ 4. Service area enforcement (RADIUS check)
+
 		const serviceArea = await db.serviceArea.findFirst({
 			where: { companyId },
 		});
