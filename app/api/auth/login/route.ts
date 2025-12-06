@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 
 const userLoginSchema = z.object({
-	email: z.string().trim().email(),
+	email: z.string().trim().pipe(email()),
 	password: z.string().min(6),
 });
 
@@ -29,11 +29,12 @@ export async function POST(req: Request) {
 
 		console.log("📥 Login attempt:", email);
 
-		const supabase = createRouteHandlerClient({
-			cookies,
-		});
+	const supabase = createRouteHandlerClient({
+	cookies: () => cookies()
+});
 
-		// 🔐 Attempt to sign in
+
+
 		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
 			{ email, password }
 		);
@@ -117,3 +118,7 @@ export async function POST(req: Request) {
 		);
 	}
 }
+function email(): any {
+	throw new Error("Function not implemented.");
+}
+
