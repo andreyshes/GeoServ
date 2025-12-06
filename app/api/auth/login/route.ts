@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 
 const userLoginSchema = z.object({
-	email: z.string().trim().pipe(email()),
+	email: z.string().trim().trim().email(),
 	password: z.string().min(6),
 });
 
