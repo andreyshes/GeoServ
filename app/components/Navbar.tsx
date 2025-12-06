@@ -9,7 +9,6 @@ import { MapPin, Menu, X, LogOut, LayoutDashboard, User } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// --- UI COMPONENTS (Assuming these are available or simplified here for the single file) ---
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -165,7 +164,6 @@ export default function Navbar({ user: serverUser }: { user: any }) {
 						)}
 
 						{!user ? (
-							// LOGGED OUT STATE
 							<>
 								<Link
 									href="/auth/login"
