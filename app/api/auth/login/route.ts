@@ -4,6 +4,11 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
+const userLoginSchema = z.object({
+	email: z.string().trim().email(),
+	password: z.string().min(6),
+});
+
 type ApiResponse<T> = {
 	success: boolean;
 	data?: T;
@@ -18,21 +23,17 @@ type LoginResponse = {
 	companyName: string;
 };
 
-const userLoginSchema = z.object({
-	email: z.string().trim().pipe(z.email()),
-	password: z.string().min(6),
-});
-
 export async function POST(req: Request) {
 	try {
-		const json = await req.json();
-
-		const { email, password } = userLoginSchema.parse(json);
+		const { email, password } = userLoginSchema.parse(await req.json());
 
 		console.log("📥 Login attempt:", email);
 
-		const supabase = createRouteHandlerClient({ cookies });
+		const supabase = createRouteHandlerClient({
+			cookies,
+		});
 
+		// 🔐 Attempt to sign in
 		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
 			{ email, password }
 		);
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
 
 		const userId = data.user.id;
 
+		// Look up user in local DB
 		let dbUser = await db.user.findUnique({
 			where: { authUserId: userId },
 			include: { company: true },
@@ -60,11 +62,15 @@ export async function POST(req: Request) {
 
 		if (!dbUser) {
 			return NextResponse.json<ApiResponse<null>>(
-				{ success: false, error: "User profile not found after sign-in" },
+				{
+					success: false,
+					error: "User profile not found after sign-in",
+				},
 				{ status: 404 }
 			);
 		}
 
+		// Auto-create a company if missing
 		if (!dbUser.company) {
 			const companyDomain = email.split("@").pop() || "default";
 			const companyName = email.split("@")[0];
@@ -83,10 +89,6 @@ export async function POST(req: Request) {
 			});
 		}
 
-		const companyName = dbUser.company
-			? dbUser.company.name
-			: "Unknown Company";
-
 		console.log("✅ Login success for:", dbUser.email);
 
 		return NextResponse.json<ApiResponse<LoginResponse>>({
@@ -96,17 +98,19 @@ export async function POST(req: Request) {
 				email: dbUser.email,
 				role: dbUser.role,
 				companyId: dbUser.companyId,
-				companyName: companyName,
+				companyName: dbUser.company?.name || "Unknown Company",
 			},
 		});
 	} catch (err) {
 		console.error("❌ Login route crashed:", err);
+
 		if (err instanceof z.ZodError) {
 			return NextResponse.json<ApiResponse<null>>(
 				{ success: false, error: "Invalid input data" },
 				{ status: 400 }
 			);
 		}
+
 		return NextResponse.json<ApiResponse<null>>(
 			{ success: false, error: "Internal server error" },
 			{ status: 500 }
