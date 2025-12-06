@@ -288,25 +288,11 @@ export default function Navbar({ user: serverUser }: { user: any }) {
 						{/* Links */}
 						<div className="flex flex-col gap-6 text-xl font-medium text-neutral-400">
 							<Link
-								href="/features"
-								className="text-white hover:text-black"
-								onClick={() => setMobileMenuOpen(false)}
-							>
-								Features
-							</Link>
-							<Link
 								href="/business"
 								className="text-white  hover:text-black"
 								onClick={() => setMobileMenuOpen(false)}
 							>
 								For Business
-							</Link>
-							<Link
-								href="/pricing"
-								className="text-white  hover:text-black"
-								onClick={() => setMobileMenuOpen(false)}
-							>
-								Pricing
 							</Link>
 
 							{user && (role === "company" || role === "ADMIN") && (

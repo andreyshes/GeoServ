@@ -26,14 +26,10 @@ import {
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// --- UTILS ---
 function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-// --- COMPONENTS ---
-
-// 1. Reusable Spotlight Card for that "Premium" hover feel
 const SpotlightCard = ({
 	children,
 	className = "",
