@@ -23,7 +23,7 @@ interface AddressPageProps {
 export default function AddressPage({
 	companyId,
 	embedded = false,
-}: AddressPageProps) {
+}: AddressPageProps= {}) {
 	const [address, setAddress] = useState("");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [error, setError] = useState<string | undefined>(undefined);
