@@ -29,12 +29,9 @@ export async function POST(req: Request) {
 
 		console.log("📥 Login attempt:", email);
 
-	const supabase = createRouteHandlerClient({
-	cookies: () => cookies()
-});
-
-
-
+		const supabase = createRouteHandlerClient({
+			cookies: () => cookies(),
+		});
 		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
 			{ email, password }
 		);
@@ -118,7 +115,3 @@ export async function POST(req: Request) {
 		);
 	}
 }
-function email(): any {
-	throw new Error("Function not implemented.");
-}
-
