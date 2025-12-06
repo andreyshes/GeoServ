@@ -17,6 +17,9 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "types": [
+      "google.maps"
+    ],
     "plugins": [
       {
         "name": "next"
