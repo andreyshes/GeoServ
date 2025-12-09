@@ -13,8 +13,19 @@ import {
 	LayoutDashboard,
 	User as UserIcon,
 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from "@/app/components/ui/avatar";
 import { twMerge } from "tailwind-merge";
 import clsx from "clsx";
 
@@ -30,11 +41,9 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-
 	useEffect(() => {
 		setUser(initialUser);
 	}, [initialUser]);
-
 
 	useEffect(() => {
 		const { data } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,13 +54,11 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 		return () => data.subscription.unsubscribe();
 	}, [supabase, router]);
 
-
 	useEffect(() => {
 		const handleScroll = () => setIsScrolled(window.scrollY > 20);
 		window.addEventListener("scroll", handleScroll);
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
-
 
 	async function handleLogout() {
 		await supabase.auth.signOut();
@@ -74,7 +81,6 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 				)}
 			>
 				<div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-
 					<Link href="/" className="flex items-center gap-2 group">
 						<div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">
 							<MapPin className="h-4 w-4 text-white" />
@@ -84,7 +90,6 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 						</span>
 					</Link>
 
-
 					<nav className="hidden md:flex items-center gap-8">
 						<Link
 							href="/business"
@@ -93,7 +98,6 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 							For Business
 						</Link>
 					</nav>
-
 
 					<div className="hidden md:flex items-center gap-4">
 						{role === "company" || role === "ADMIN" ? (
@@ -140,8 +144,12 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 								>
 									<DropdownMenuLabel>
 										<div className="flex flex-col space-y-1">
-											<p className="text-sm font-medium text-white">My Account</p>
-											<p className="text-xs text-neutral-500 truncate">{user.email}</p>
+											<p className="text-sm font-medium text-white">
+												My Account
+											</p>
+											<p className="text-xs text-neutral-500 truncate">
+												{user.email}
+											</p>
 										</div>
 									</DropdownMenuLabel>
 
@@ -195,7 +203,7 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -20 }}
 						transition={{ duration: 0.2 }}
-						className="fixed inset-0 z-[60] bg-black p-6 md:hidden flex flex-col"
+						className="fixed inset-0 z-60 bg-black p-6 md:hidden flex flex-col"
 					>
 						{/* HEADER */}
 						<div className="flex justify-between items-center mb-10">
@@ -236,6 +244,55 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 
 							<div className="h-px bg-white/10 w-full" />
 
+							{/* PROFILE SECTION */}
+							{user && (
+								<div className="flex flex-col gap-4">
+									<div className="flex items-center gap-3">
+										<Avatar className="h-10 w-10 border border-white/10">
+											<AvatarImage src={avatarUrl} />
+											<AvatarFallback>{initials}</AvatarFallback>
+										</Avatar>
+										<div className="flex flex-col">
+											<span className="text-white font-medium">
+												{user.email}
+											</span>
+											<span className="text-neutral-500 text-sm">
+												Logged in
+											</span>
+										</div>
+									</div>
+
+									{/* PROFILE ACTION LINKS */}
+									<div className="flex flex-col text-lg gap-3 mt-2">
+										<Link
+											href="/profile"
+											onClick={() => setMobileMenuOpen(false)}
+											className="text-white"
+										>
+											Profile
+										</Link>
+
+										<Link
+											href="/settings"
+											onClick={() => setMobileMenuOpen(false)}
+											className="text-white"
+										>
+											Settings
+										</Link>
+
+										<Link
+											href="/billing"
+											onClick={() => setMobileMenuOpen(false)}
+											className="text-white"
+										>
+											Billing
+										</Link>
+									</div>
+
+									<div className="h-px bg-white/10 w-full" />
+								</div>
+							)}
+
 							{/* AUTH BUTTONS */}
 							{!user ? (
 								<>
@@ -256,25 +313,12 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 									</Link>
 								</>
 							) : (
-								<>
-									<div className="flex items-center gap-3">
-										<Avatar className="h-10 w-10 border border-white/10">
-											<AvatarImage src={avatarUrl} />
-											<AvatarFallback>{initials}</AvatarFallback>
-										</Avatar>
-										<div className="flex flex-col">
-											<span className="text-white">{user.email}</span>
-											<span className="text-neutral-500 text-sm">Logged in</span>
-										</div>
-									</div>
-
-									<button
-										onClick={handleLogout}
-										className="bg-neutral-900 text-white px-6 py-3 rounded-full border border-white/20 mt-4"
-									>
-										Log Out
-									</button>
-								</>
+								<button
+									onClick={handleLogout}
+									className="bg-neutral-900 text-white px-6 py-3 rounded-full border border-white/20 mt-4"
+								>
+									Log Out
+								</button>
 							)}
 						</div>
 					</motion.div>
