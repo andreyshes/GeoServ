@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServerAction } from "@/lib/supabaseServer-action";
 const userLoginSchema = z.object({
 	email: z.string().trim().trim().email(),
 	password: z.string().min(6),
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
 		console.log("📥 Login attempt:", email);
 
-    const supabase = await supabaseServer();
+    const supabase = await supabaseServerAction();
 
 		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
 			{ email, password }
