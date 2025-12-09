@@ -30,12 +30,12 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-	// Sync server user → client state
+
 	useEffect(() => {
 		setUser(initialUser);
 	}, [initialUser]);
 
-	// Listen for Supabase events
+
 	useEffect(() => {
 		const { data } = supabase.auth.onAuthStateChange((_event, session) => {
 			setUser(session?.user ?? null);
@@ -45,14 +45,14 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 		return () => data.subscription.unsubscribe();
 	}, [supabase, router]);
 
-	// Scroll effect
+
 	useEffect(() => {
 		const handleScroll = () => setIsScrolled(window.scrollY > 20);
 		window.addEventListener("scroll", handleScroll);
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	// Logout handler
+
 	async function handleLogout() {
 		await supabase.auth.signOut();
 		setUser(null);
@@ -74,7 +74,7 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 				)}
 			>
 				<div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-					{/* LOGO */}
+
 					<Link href="/" className="flex items-center gap-2 group">
 						<div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">
 							<MapPin className="h-4 w-4 text-white" />
@@ -84,22 +84,22 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 						</span>
 					</Link>
 
-					{/* DESKTOP NAV */}
+
 					<nav className="hidden md:flex items-center gap-8">
 						<Link
 							href="/business"
-							className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+							className="text-sm font-medium text-neutral-400 hover:text-black  transition-colors dark:hover:text-white"
 						>
 							For Business
 						</Link>
 					</nav>
 
-					{/* AUTH / AVATAR */}
+
 					<div className="hidden md:flex items-center gap-4">
 						{role === "company" || role === "ADMIN" ? (
 							<Link
 								href="/dashboard"
-								className="text-sm font-medium text-neutral-400 hover:text-white transition-colors mr-2"
+								className="text-sm font-medium text-neutral-400 hover:text-black transition-colors mr-2"
 							>
 								Dashboard
 							</Link>

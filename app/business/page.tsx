@@ -122,7 +122,7 @@ export default function BusinessPage() {
 				<div className="absolute right-0 bottom-[10%] w-[500px] h-[300px] bg-blue-500/10 blur-[150px] rounded-full" />
 			</div>
 
-			{/* HERO SECTION */}
+
 			<section className="pt-24 pb-16 md:pt-36 md:pb-24 px-6 text-center max-w-6xl mx-auto relative z-10">
 				<motion.div
 					initial={{ opacity: 0, y: 30 }}
@@ -149,7 +149,7 @@ export default function BusinessPage() {
 					transition={{ duration: 0.6, delay: 0.2 }}
 				>
 					<Link
-						href="/auth/business-signup"
+						href="/auth/register"
 						className="inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold rounded-full bg-green-600 text-white shadow-xl shadow-green-600/30 hover:bg-green-500 transition-all duration-300 transform hover:-translate-y-0.5"
 					>
 						Join GeoServ Today
