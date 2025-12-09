@@ -40,6 +40,7 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 	const [user, setUser] = useState(initialUser);
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
 	useEffect(() => {
 		setUser(initialUser);
@@ -245,13 +246,19 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 							<div className="h-px bg-white/10 w-full" />
 
 							{/* PROFILE SECTION */}
+							{/* PROFILE SECTION */}
 							{user && (
 								<div className="flex flex-col gap-4">
-									<div className="flex items-center gap-3">
+									{/* AVATAR ROW (CLICK TO TOGGLE DROPDOWN) */}
+									<button
+										onClick={() => setProfileMenuOpen((prev) => !prev)}
+										className="flex items-center gap-3 text-left"
+									>
 										<Avatar className="h-10 w-10 border border-white/10">
 											<AvatarImage src={avatarUrl} />
 											<AvatarFallback>{initials}</AvatarFallback>
 										</Avatar>
+
 										<div className="flex flex-col">
 											<span className="text-white font-medium">
 												{user.email}
@@ -260,36 +267,31 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 												Logged in
 											</span>
 										</div>
-									</div>
+									</button>
 
-									{/* PROFILE ACTION LINKS */}
-									<div className="flex flex-col text-lg gap-3 mt-2">
-										<Link
-											href="/profile"
-											onClick={() => setMobileMenuOpen(false)}
-											className="text-white"
+									{/* DROPDOWN MENU */}
+									{profileMenuOpen && (
+										<motion.div
+											initial={{ opacity: 0, y: -5 }}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: -5 }}
+											transition={{ duration: 0.15 }}
+											className="ml-12 flex flex-col gap-3 text-lg"
 										>
-											Profile
-										</Link>
+											<Link
+												href="/profile"
+												onClick={() => {
+													setProfileMenuOpen(false);
+													setMobileMenuOpen(false);
+												}}
+												className="text-white"
+											>
+												Profile
+											</Link>
+										</motion.div>
+									)}
 
-										<Link
-											href="/settings"
-											onClick={() => setMobileMenuOpen(false)}
-											className="text-white"
-										>
-											Settings
-										</Link>
-
-										<Link
-											href="/billing"
-											onClick={() => setMobileMenuOpen(false)}
-											className="text-white"
-										>
-											Billing
-										</Link>
-									</div>
-
-									<div className="h-px bg-white/10 w-full" />
+									<div className="h-px bg-white/10 w-full mt-2" />
 								</div>
 							)}
 

@@ -137,7 +137,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 				animate={{ opacity: 1, y: 0 }}
 				className="rounded-xl border border-gray-200 bg-white shadow-sm p-6"
 			>
-				<div className="flex items-center justify-between">
+				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 					<div>
 						<h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
 							Service Area
@@ -150,7 +150,7 @@ export default function DashboardClient({ companyId }: DashboardClientProps) {
 
 					<Button
 						onClick={() => (window.location.href = "/dashboard/service-area")}
-						className="bg-blue-600 hover:bg-blue-700 text-white"
+						className="bg-blue-600 hover:bg-blue-700 text-white self-start sm:self-auto"
 					>
 						Manage Service Area
 					</Button>
