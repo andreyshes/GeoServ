@@ -1,27 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
-import {
-	motion
-} from "framer-motion";
+import { motion } from "framer-motion";
 import {
 	MapPin,
 	ShieldCheck,
 	Building2,
 	Briefcase,
-	ArrowRight,
 	CheckCircle2,
-	Menu,
-	X,
 	Zap,
-	Clock,
 	ChevronRight,
-	Star,
-	Globe,
+	LayoutDashboard,
+	DollarSign,
+	Users,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import Image from "next/image";
 
 function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -117,7 +113,6 @@ const LogoTicker = () => (
 		</div>
 		<div className="relative flex overflow-x-hidden group">
 			<div className="animate-marquee flex whitespace-nowrap gap-20 items-center">
-				{/* Mock Logos - repeated twice for seamless loop */}
 				{[...Array(2)].map((_, i) => (
 					<React.Fragment key={i}>
 						{[
@@ -138,8 +133,8 @@ const LogoTicker = () => (
 					</React.Fragment>
 				))}
 			</div>
-			<div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#030303] to-transparent z-10" />
-			<div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#030303] to-transparent z-10" />
+			<div className="absolute inset-y-0 left-0 w-32 bg-[linear-gradient(to_right,#030303_0%,transparent_100%)] z-10" />
+			<div className="absolute inset-y-0 right-0 w-32 bg-[linear-gradient(to_left,#030303_0%,transparent_100%)] z-10" />
 		</div>
 	</div>
 );
@@ -149,17 +144,23 @@ const LogoTicker = () => (
 export default function HomePage() {
 	return (
 		<div className="min-h-screen bg-[#030303] text-neutral-200 font-sans selection:bg-blue-500/30 selection:text-blue-200 relative">
-			{/* Global Grain Texture for Film Effect */}
 			<div
-				className="fixed inset-0 pointer-events-none opacity-[0.03] z-[60] mix-blend-overlay"
+				className="fixed inset-0 pointer-events-none opacity-[0.03] z-0 mix-blend-overlay"
 				style={{
 					backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
 				}}
 			></div>
 
-			{/* Dynamic Background */}
 			<div className="fixed inset-0 pointer-events-none -z-10">
-				<div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+				<div
+					className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)]"
+					style={{
+						maskImage:
+							"radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%)",
+						WebkitMaskImage:
+							"radial-gradient(ellipse 60% 50% at 50% 0%, #000 70%, transparent 100%)",
+					}}
+				/>
 				<div className="absolute left-1/2 top-[-10%] w-[1000px] h-[500px] -translate-x-1/2 bg-blue-600/20 blur-[120px] rounded-[100%] opacity-50 animate-pulse" />
 				<div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-500/5 blur-[100px] rounded-full" />
 			</div>
@@ -181,7 +182,7 @@ export default function HomePage() {
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.5, delay: 0.1 }}
-						className="text-5xl md:text-8xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-500 mb-8 leading-[1.1] max-w-5xl mx-auto"
+						className="text-5xl md:text-8xl font-bold tracking-tighter bg-clip-text text-transparent bg-[linear-gradient(to_bottom,white_0%,white_50%,neutral-500_100%)] mb-8 leading-[1.1] max-w-5xl mx-auto"
 					>
 						Local services. <br />
 						<span className="text-white/40">Reinvented.</span>
@@ -213,29 +214,27 @@ export default function HomePage() {
 						</Button>
 					</motion.div>
 
-					{/* Hero Visual/Dashboard Mockup Hint */}
+					{/* Hero Visual: Professional Dashboard Mockup (FIXED GRADIENTS) */}
 					<motion.div
 						initial={{ opacity: 0, scale: 0.95, y: 40 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
 						className="mt-20 relative mx-auto max-w-5xl"
 					>
-						<div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20" />
-						<div className="relative rounded-xl border border-white/10 bg-[#0A0A0A] aspect-[16/9] overflow-hidden shadow-2xl">
-							{/* Abstract UI Representation */}
-							<div className="absolute top-0 left-0 right-0 h-10 border-b border-white/5 bg-white/5 flex items-center px-4 gap-2">
-								<div className="h-3 w-3 rounded-full bg-red-500/20" />
-								<div className="h-3 w-3 rounded-full bg-yellow-500/20" />
-								<div className="h-3 w-3 rounded-full bg-green-500/20" />
-							</div>
-							<div className="p-12 flex items-center justify-center h-full">
-								<div className="text-center">
-									<div className="h-20 w-20 bg-blue-500/10 rounded-full mx-auto mb-6 flex items-center justify-center border border-blue-500/20 animate-pulse">
-										<Globe className="h-10 w-10 text-blue-500" />
-									</div>
-									<div className="h-4 w-48 bg-neutral-800 rounded-full mx-auto mb-3" />
-									<div className="h-4 w-32 bg-neutral-800 rounded-full mx-auto" />
-								</div>
+						{/* Glow */}
+						<div className="absolute -inset-1 bg-[linear-gradient(to_right,rgb(59,130,246)_0%,rgb(147,51,234)_100%)] rounded-2xl blur opacity-20 z-0" />
+
+						{/* Mockup container */}
+						<div className="relative z-10 rounded-xl border border-white/10 bg-[#0A0A0A] overflow-hidden shadow-2xl">
+							<div className="relative h-[550px] w-full bg-neutral-950 flex items-center justify-center overflow-hidden rounded-xl">
+								<Image
+									src="/mockup.png"
+									alt="GeoServ mockup"
+									fill
+									className="object-cover"
+									priority
+									style={{ objectPosition: "left center" }}
+								/>
 							</div>
 						</div>
 					</motion.div>
@@ -510,7 +509,7 @@ export default function HomePage() {
 				</div>
 			</footer>
 
-			{/* CSS for marquee animation */}
+			{/* CSS for marquee and fixing missing custom gradients/animations */}
 			<style jsx global>{`
 				@keyframes marquee {
 					0% {
@@ -523,6 +522,9 @@ export default function HomePage() {
 				.animate-marquee {
 					animation: marquee 30s linear infinite;
 				}
+
+				/* FIX: Tailwind 3.0+ recommends using explicit background utility for gradients */
+				/* .bg-linear-to-r and .bg-linear-to-b are now replaced with bg-[linear-gradient(...)] */
 			`}</style>
 		</div>
 	);
