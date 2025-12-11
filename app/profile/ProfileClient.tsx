@@ -52,7 +52,6 @@ export default function ProfileClient({
 		const file = e.target.files?.[0];
 		if (!file) return;
 
-		// --- File Validation ---
 		const MAX_SIZE = 5 * 1024 * 1024; // 5MB limit
 		const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
