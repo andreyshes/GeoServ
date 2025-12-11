@@ -151,7 +151,19 @@ export default function ProfileClient({
 				<h2 className="text-xl font-semibold text-white mb-6">Profile Photo</h2>
 
 				<div className="flex items-center gap-6">
-					<div className="relative h-24 w-24 rounded-full overflow-hidden border border-white/10 shadow-lg flex items-center justify-center">
+					<div
+						className="
+  relative
+  rounded-full
+  overflow-hidden
+  border border-white/10
+  shadow-lg
+  flex items-center justify-center
+  w-20 h-20 aspect-square
+  sm:w-24 sm:h-24
+	shrink-0
+"
+					>
 						{isUploadingAvatar ? (
 							<Loader2 className="h-6 w-6 animate-spin text-white/50" />
 						) : (
