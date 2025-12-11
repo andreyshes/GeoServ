@@ -24,6 +24,9 @@ interface ProfileClientProps {
 	company: Company;
 }
 
+const TRANSPARENT_PIXEL =
+	"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 export default function ProfileClient({
 	authUser,
 	dbUser,
@@ -39,16 +42,32 @@ export default function ProfileClient({
 	const [newPw, setNewPw] = useState("");
 	const [confirmPw, setConfirmPw] = useState("");
 
-	const avatarUrl = authUser.user_metadata?.avatar_url || null;
+	const avatarUrl =
+		dbUser.avatarUrl || authUser.user_metadata?.avatar_url || null;
 
-	// Avatar preview state
 	const [avatarPreview, setAvatarPreview] = useState(avatarUrl);
+	const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
 	async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
-		// Client-side upload → no server action file limit
+		// --- File Validation ---
+		const MAX_SIZE = 5 * 1024 * 1024; // 5MB limit
+		const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+		if (file.size > MAX_SIZE) {
+			toast.error("Photo size must be less than 5MB.");
+			return;
+		}
+
+		if (!allowedTypes.includes(file.type)) {
+			toast.error("Only JPG, PNG, and WebP images are allowed.");
+			return;
+		}
+
+		setIsUploadingAvatar(true);
+
 		const supabase = supabaseBrowser();
 
 		const fileExt = file.name.split(".").pop();
@@ -64,6 +83,7 @@ export default function ProfileClient({
 
 		if (uploadErr) {
 			toast.error("Upload failed: " + uploadErr.message);
+			setIsUploadingAvatar(false);
 			return;
 		}
 
@@ -74,14 +94,19 @@ export default function ProfileClient({
 
 		const publicUrl = urlData.publicUrl;
 
-		// Update Supabase Auth metadata via server action
+		setAvatarPreview(publicUrl);
+
 		const response = await updateAvatarUrl(publicUrl);
 
 		if (response.error) {
+			// Revert preview if the server action fails
+			setAvatarPreview(avatarUrl);
 			toast.error(response.error);
 		} else {
 			toast.success("Avatar updated!");
 		}
+
+		setIsUploadingAvatar(false);
 	}
 
 	const saveName = () => {
@@ -110,7 +135,13 @@ export default function ProfileClient({
 		startTransition(async () => {
 			const result = await updatePassword(currentPw, newPw);
 			if (result.error) toast.error(result.error);
-			else toast.success("Password updated.");
+			else {
+				toast.success("Password updated.");
+				// Clear password fields on success
+				setCurrentPw("");
+				setNewPw("");
+				setConfirmPw("");
+			}
 		});
 	};
 
@@ -121,28 +152,53 @@ export default function ProfileClient({
 				<h2 className="text-xl font-semibold text-white mb-6">Profile Photo</h2>
 
 				<div className="flex items-center gap-6">
-					<div className="relative h-24 w-24 rounded-full overflow-hidden border border-white/10 shadow-lg">
-						<Image
-							src={avatarPreview || "/default-avatar.png"}
-							alt="Avatar"
-							fill
-							className="object-cover"
-						/>
+					<div className="relative h-24 w-24 rounded-full overflow-hidden border border-white/10 shadow-lg flex items-center justify-center">
+						{isUploadingAvatar ? (
+							<Loader2 className="h-6 w-6 animate-spin text-white/50" />
+						) : (
+							<Image
+								src={
+									avatarPreview && avatarPreview.length > 5
+										? avatarPreview
+										: TRANSPARENT_PIXEL
+								}
+								alt="Avatar"
+								fill
+								className="object-cover"
+							/>
+						)}
+
+						{!avatarPreview && (
+							<div className="absolute inset-0 flex items-center justify-center bg-gray-700/50">
+								<Camera className="h-6 w-6 text-white/70" />
+							</div>
+						)}
 					</div>
 
 					<div>
-						<label className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg cursor-pointer border border-white/10 transition">
-							<Camera className="h-4 w-4" />
-							Change Photo
+						<label
+							className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg cursor-pointer border border-white/10 transition ${
+								isUploadingAvatar
+									? "bg-white/5 opacity-50"
+									: "bg-white/5 hover:bg-white/10"
+							}`}
+						>
+							{isUploadingAvatar ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<Camera className="h-4 w-4" />
+							)}
+							{isUploadingAvatar ? "Uploading..." : "Change Photo"}
 							<input
 								type="file"
-								accept="image/*"
+								accept="image/jpeg,image/png,image/webp"
 								className="hidden"
 								onChange={handleAvatarChange}
+								disabled={isUploadingAvatar}
 							/>
 						</label>
 						<p className="text-xs text-neutral-500 mt-2">
-							Recommended: Square image, JPG or PNG.
+							Recommended: Square image, max 5MB, JPG, PNG, or WebP.
 						</p>
 					</div>
 				</div>
@@ -187,7 +243,7 @@ export default function ProfileClient({
 							{isPending ? (
 								<Loader2 className="h-4 w-4 animate-spin" />
 							) : (
-								"Save Changes"
+								"Save Name"
 							)}
 						</Button>
 
@@ -255,7 +311,7 @@ export default function ProfileClient({
 
 					<Button
 						onClick={savePassword}
-						disabled={isPending}
+						disabled={isPending || !currentPw || !newPw || !confirmPw}
 						className="bg-blue-600 hover:bg-blue-700 text-white mt-4"
 					>
 						{isPending ? (

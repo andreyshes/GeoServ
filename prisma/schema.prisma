@@ -31,6 +31,7 @@ model User {
   email      String   @unique
   name       String?
   companyId  String
+  avatarUrl  String?
   createdAt  DateTime @default(now())
   authUserId String   @unique
   updatedAt  DateTime @updatedAt
