@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { z } from "zod";
 
+type ApiResponse<T> = {
+	success: boolean;
+	data?: T;
+	error?: string;
+};
+
+const bookingQuerySchema = z.object({
+	status: z.string().optional(),
+
+	paid: z
+		.enum(["true", "false"])
+		.transform((val) => val === "true")
+		.optional(),
+
+	from: z.iso
+		.datetime()
+		.transform((val) => new Date(val))
+		.optional(),
+
+	to: z.iso
+		.datetime()
+		.transform((val) => new Date(val))
+		.optional(),
+});
 export async function GET(
 	request: Request,
 	context: { params: Promise<{ customerId: string }> }
@@ -9,28 +34,23 @@ export async function GET(
 		const { customerId } = await context.params;
 		const { searchParams } = new URL(request.url);
 
-		const status = searchParams.get("status") || undefined;
-		const paid = searchParams.get("paid");
-		const from = searchParams.get("from");
-		const to = searchParams.get("to");
+		const query = bookingQuerySchema.parse(
+			Object.fromEntries(searchParams.entries())
+		);
 
-		console.log("👤 Fetching customer bookings:", {
+		const filters: any = {
 			customerId,
-			status,
-			paid,
-			from,
-			to,
-		});
-
-		const filters: any = { customerId };
-		if (status) filters.status = status;
-		if (paid !== null) filters.paid = paid === "true";
-		if (from || to) {
-			filters.date = {};
-			if (from) filters.date.gte = new Date(from);
-			if (to) filters.date.lte = new Date(to);
-		}
-
+			...(query.status && { status: query.status }),
+			...(query.paid !== undefined && { paid: query.paid }),
+			...(query.from || query.to
+				? {
+						date: {
+							...(query.from && { gte: query.from }),
+							...(query.to && { lte: query.to }),
+						},
+					}
+				: {}),
+		};
 		const bookings = await db.booking.findMany({
 			where: filters,
 			include: {
@@ -41,11 +61,28 @@ export async function GET(
 			orderBy: { date: "asc" },
 		});
 
-		return NextResponse.json({ bookings });
-	} catch (error: any) {
+		return NextResponse.json<ApiResponse<typeof bookings>>(
+			{ success: true, data: bookings },
+			{ status: 200 }
+		);
+	} catch (error) {
 		console.error("❌ Error fetching customer bookings:", error);
-		return NextResponse.json(
-			{ error: error.message || "Internal server error" },
+
+		if (error instanceof z.ZodError) {
+			return NextResponse.json<ApiResponse<null>>(
+				{
+					success: false,
+					error: error.message,
+				},
+				{ status: 400 }
+			);
+		}
+
+		return NextResponse.json<ApiResponse<null>>(
+			{
+				success: false,
+				error: "Internal server error",
+			},
 			{ status: 500 }
 		);
 	}
