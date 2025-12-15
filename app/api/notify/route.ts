@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
 import { resend } from "@/lib/resend";
 import NotServicedEmail from "@/app/emails/NotServicedEmail";
+import { z } from "zod";
 
+type ApiResponse<T> = {
+	success: boolean;
+	data?: T;
+	error?: string;
+};
+
+const notifySchema = z.object({
+	email: z.email(),
+	address: z.string().trim().min(5).max(100),
+});
 export async function POST(req: Request) {
 	try {
-		const { email, address } = await req.json();
-		console.log("📩 Notify route triggered for:", email, address);
-		if (!email || !address) {
-			return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-		}
-
+		// validate request body
+		const body = await req.json();
+		const { email, address } = notifySchema.parse(body);
 		await resend.emails.send({
 			from: "GeoServe <notify@geoserv.org>",
 			to: email,
@@ -17,12 +25,22 @@ export async function POST(req: Request) {
 			react: NotServicedEmail({ address }),
 		});
 
-		return NextResponse.json({ success: true });
+		return NextResponse.json<ApiResponse<null>>(
+			{
+				success: true,
+			},
+			{ status: 200 }
+		);
 	} catch (err) {
 		console.error("Email send failed:", err);
-		return NextResponse.json(
-			{ error: "Failed to send email" },
-			{ status: 500 }
+		return NextResponse.json<ApiResponse<null>>(
+			{
+				success: false,
+				error: "Failed to send notification email!",
+			},
+			{
+				status: 500,
+			}
 		);
 	}
 }
