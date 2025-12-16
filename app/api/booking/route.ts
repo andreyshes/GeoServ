@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { Resend } from "resend";
 import BookingConfirmationEmail from "@/app/emails/BookingConfirmationEmail";
-import { getCoordinates } from "@/lib/geo"; // make sure this exists
+import { getCoordinates } from "@/lib/geo";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -89,7 +89,6 @@ export async function POST(req: Request) {
 			);
 		}
 
-
 		let address: string | null = rawAddress ?? null;
 		let lat: number | null = null;
 		let lng: number | null = null;
@@ -102,7 +101,6 @@ export async function POST(req: Request) {
 			lat = location.lat;
 			lng = location.lng;
 		} else if (address && !lat && !lng) {
-
 			const coords = await getCoordinates(address);
 			if (coords) {
 				lat = coords.lat;
@@ -116,7 +114,6 @@ export async function POST(req: Request) {
 				{ status: 400 }
 			);
 		}
-
 
 		const serviceArea = await db.serviceArea.findFirst({
 			where: { companyId },

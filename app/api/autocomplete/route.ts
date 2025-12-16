@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import type { ApiResponse } from "@/lib/type";
 
 const QuerySchema = z.object({
 	input: z.string().min(1, "Input must not be empty"),
@@ -71,6 +66,17 @@ export async function GET(req: Request) {
 		});
 	} catch (err) {
 		console.error("❌ Autocomplete error:", err);
+		if (err instanceof z.ZodError) {
+			return NextResponse.json<ApiResponse<null>>(
+				{
+					success: false,
+					error: "Invalid request data",
+				},
+				{
+					status: 400,
+				}
+			);
+		}
 
 		return NextResponse.json<ApiResponse<null>>(
 			{

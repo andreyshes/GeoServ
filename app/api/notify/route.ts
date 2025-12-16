@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import { resend } from "@/lib/resend";
 import NotServicedEmail from "@/app/emails/NotServicedEmail";
 import { z } from "zod";
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import type { ApiResponse } from "@/lib/type";
 
 const notifySchema = z.object({
 	email: z.email(),

@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import type { ApiResponse } from "@/lib/type";
 
 const paramsSchema = z.object({
 	id: z.string().min(1),
@@ -37,6 +32,8 @@ export async function PATCH(
 			data: updated,
 		});
 	} catch (err) {
+		console.error("❌ Error updating booking:", err);
+
 		if (err instanceof z.ZodError) {
 			return NextResponse.json<ApiResponse<null>>(
 				{
@@ -46,7 +43,6 @@ export async function PATCH(
 				{ status: 400 }
 			);
 		}
-		console.error("❌ Error updating booking:", err);
 
 		return NextResponse.json<ApiResponse<null>>(
 			{

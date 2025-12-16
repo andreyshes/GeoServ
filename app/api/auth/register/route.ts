@@ -3,12 +3,7 @@ import { db } from "@/lib/db";
 import { createClient } from "@supabase/supabase-js";
 import { getCoordinates } from "@/lib/geo";
 import { z } from "zod";
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import type { ApiResponse } from "@/lib/type";
 
 const registerSchema = z.object({
 	companyName: z.string().min(1, "Company name is required"),
@@ -122,10 +117,10 @@ export async function POST(req: Request) {
 			return errorResponse(err.issues[0].message, 400);
 		}
 
-		const message =
-			err instanceof Error ? err.message : "Server error during registration";
-
-		console.error("❌ Register error:", message);
-		return errorResponse(message, 500);
+		console.error("❌ Registration error:", err);
+		return NextResponse.json<ApiResponse<null>>(
+			{ success: false, error: "Internal server error" },
+			{ status: 500 }
+		);
 	}
 }

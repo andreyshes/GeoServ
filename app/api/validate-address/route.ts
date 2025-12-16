@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCoordinates } from "@/lib/geo";
 import { z } from "zod";
-
-type ApiResponse<T> = { success: boolean; data?: T; error?: string };
+import { type ApiResponse } from "@/lib/type";
 
 const addressSchema = z.object({
 	address: z.string().min(1, "Address is required"),

@@ -1,43 +1,64 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { z } from "zod";
+import { type ApiResponse } from "@/lib/type";
+
+const paramsSchema = z.object({
+	companyId: z.cuid(),
+});
+
+const QuerySchema = z.object({
+	page: z.coerce.number().int().min(1).default(1),
+
+	limit: z.coerce.number().int().min(1).max(100).default(10),
+
+	status: z.enum(["pending", "confirmed", "completed", "canceled"]).optional(),
+
+	paid: z
+		.enum(["true", "false"])
+		.transform((val) => val === "true")
+		.optional(),
+
+	from: z.iso
+		.datetime()
+		.transform((val) => new Date(val))
+		.optional(),
+
+	to: z.iso
+		.datetime()
+		.transform((val) => new Date(val))
+		.optional(),
+});
 
 export async function GET(
 	request: Request,
 	context: { params: Promise<{ companyId: string }> }
 ) {
 	try {
-		const { companyId } = await context.params;
-		const { searchParams } = new URL(request.url);
+		const params = paramsSchema.parse(await context.params);
 
-		const page = parseInt(searchParams.get("page") || "1");
-		const limit = parseInt(searchParams.get("limit") || "10");
-		const skip = (page - 1) * limit;
+		const query = QuerySchema.parse(
+			Object.fromEntries(new URL(request.url).searchParams.entries())
+		);
 
-		// Filters
-		const status = searchParams.get("status") || undefined;
-		const paid = searchParams.get("paid");
-		const from = searchParams.get("from");
-		const to = searchParams.get("to");
+		const skip = (query.page - 1) * query.limit;
 
-		console.log("🏢 Fetching company bookings:", {
-			companyId,
-			page,
-			limit,
-			status,
-			paid,
-			from,
-			to,
-		});
+		const filters: any = {
+			companyId: params.companyId,
 
-		const filters: any = { companyId };
+			...(query.status && { status: query.status }),
 
-		if (status) filters.status = status;
-		if (paid === "true" || paid === "false") filters.paid = paid === "true";
-		if (from || to) {
-			filters.date = {};
-			if (from) filters.date.gte = new Date(from);
-			if (to) filters.date.lte = new Date(to);
-		}
+			...(query.paid !== undefined && { paid: query.paid }),
+
+			...(query.from || query.to
+				? {
+						date: {
+							...(query.from && { gte: query.from }),
+							...(query.to && { lte: query.to }),
+						},
+					}
+				: {}),
+		};
 
 		const [bookings, total] = await Promise.all([
 			db.booking.findMany({
@@ -57,23 +78,39 @@ export async function GET(
 				},
 				orderBy: { date: "desc" },
 				skip,
-				take: limit,
+				take: query.limit,
 			}),
 			db.booking.count({ where: filters }),
 		]);
 
-		console.log(`✅ Found ${bookings.length} bookings (total ${total})`);
-
-		return NextResponse.json({
-			bookings,
-			total,
-			page,
-			totalPages: Math.ceil(total / limit),
+		return NextResponse.json<
+			ApiResponse<{
+				bookings: typeof bookings;
+				total: number;
+				page: number;
+				totalPages: number;
+			}>
+		>({
+			success: true,
+			data: {
+				bookings,
+				total,
+				page: query.page,
+				totalPages: Math.ceil(total / query.limit),
+			},
 		});
-	} catch (error: any) {
+	} catch (error) {
 		console.error("❌ Error fetching company bookings:", error);
-		return NextResponse.json(
-			{ error: error.message || "Internal server error" },
+
+		if (error instanceof z.ZodError) {
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: error.message },
+				{ status: 400 }
+			);
+		}
+
+		return NextResponse.json<ApiResponse<null>>(
+			{ success: false, error: "Internal server error" },
 			{ status: 500 }
 		);
 	}

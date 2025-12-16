@@ -22,7 +22,6 @@ export async function POST(req: Request) {
 		let accountId = company.stripeAccountId ?? null;
 		let account: Stripe.Account | null = null;
 
-		// ✅ 1. Try to retrieve existing account if ID exists
 		if (accountId) {
 			try {
 				account = await stripe.accounts.retrieve(accountId);
@@ -59,7 +58,7 @@ export async function POST(req: Request) {
 			account = await stripe.accounts.create({
 				type: "express",
 				country: "US",
-				business_type: "individual", // 💡 "company" requires EIN & full business details
+				business_type: "individual",
 				capabilities: {
 					card_payments: { requested: true },
 					transfers: { requested: true },

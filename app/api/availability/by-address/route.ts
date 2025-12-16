@@ -4,12 +4,7 @@ import { isWithinServiceArea } from "@/lib/geo-utils";
 import { getCoordinates } from "@/lib/geo";
 import { startOfDay, addDays } from "date-fns";
 import { z } from "zod";
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import type { ApiResponse } from "@/lib/type";
 
 const LOOKAHEAD_DAYS = 60;
 const SLOTS_PER_DAY = 5;
@@ -83,8 +78,7 @@ export async function POST(req: Request) {
 			include: { zipCodes: true },
 		});
 
-		type ServiceAreaType = typeof serviceAreas[number];
-
+		type ServiceAreaType = (typeof serviceAreas)[number];
 
 		const matchingAreas = serviceAreas.filter((area: ServiceAreaType) =>
 			isWithinServiceArea(lat, lng, area)
@@ -101,7 +95,6 @@ export async function POST(req: Request) {
 			});
 		}
 
-		// FIXED: Set<string>
 		const allowedWeekdays: Set<string> = new Set(
 			matchingAreas.flatMap((a: ServiceAreaType) => a.availableDays || [])
 		);
@@ -143,10 +136,22 @@ export async function POST(req: Request) {
 		});
 	} catch (err) {
 		if (err instanceof z.ZodError) {
-			return errorResponse(err.issues[0].message, 400);
+			return NextResponse.json<ApiResponse<null>>(
+				{
+					success: false,
+					error: err.issues[0].message,
+				},
+				{ status: 400 }
+			);
 		}
 
 		console.error("❌ ERROR /api/availability/by-address:", err);
-		return errorResponse("Internal server error", 500);
+		return NextResponse.json<ApiResponse<null>>(
+			{
+				success: false,
+				error: "Internal server error",
+			},
+			{ status: 500 }
+		);
 	}
 }

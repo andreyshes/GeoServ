@@ -2,14 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { addDays, startOfDay } from "date-fns";
 import { z } from "zod";
+import type { ApiResponse } from "@/lib/type";
 
 const ALL_SLOTS = ["7–9", "9–11", "11–1", "1–3", "3–5"];
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
 
 const BodySchema = z.object({
 	companyId: z.string().min(1, "Company ID is required"),
@@ -68,10 +63,22 @@ export async function POST(req: Request) {
 		});
 	} catch (err) {
 		if (err instanceof z.ZodError) {
-			return errorResponse(err.issues[0].message, 400);
+			return NextResponse.json<ApiResponse<null>>(
+				{
+					success: false,
+					error: "Invalid request data",
+				},
+				{ status: 400 }
+			);
 		}
 
 		console.error("❌ /api/availability error:", err);
-		return errorResponse("Internal server error", 500);
+		return NextResponse.json<ApiResponse<null>>(
+			{
+				success: false,
+				error: "Internal server error",
+			},
+			{ status: 500 }
+		);
 	}
 }

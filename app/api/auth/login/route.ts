@@ -2,16 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { supabaseServerAction } from "@/lib/supabaseServer-action";
+import type { ApiResponse } from "@/lib/type";
+
 const userLoginSchema = z.object({
-	email: z.string().trim().trim().email(),
+	email: z.email(),
 	password: z.string().min(6),
 });
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
 
 type LoginResponse = {
 	id: string;
@@ -27,7 +23,7 @@ export async function POST(req: Request) {
 
 		console.log("📥 Login attempt:", email);
 
-    const supabase = await supabaseServerAction();
+		const supabase = await supabaseServerAction();
 
 		const { data, error: SignInError } = await supabase.auth.signInWithPassword(
 			{ email, password }
@@ -42,7 +38,6 @@ export async function POST(req: Request) {
 
 		const userId = data.user.id;
 
-		// Look up user in local DB
 		let dbUser = await db.user.findUnique({
 			where: { authUserId: userId },
 			include: { company: true },
@@ -65,7 +60,6 @@ export async function POST(req: Request) {
 			);
 		}
 
-		// Auto-create a company if missing
 		if (!dbUser.company) {
 			const companyDomain = email.split("@").pop() || "default";
 			const companyName = email.split("@")[0];

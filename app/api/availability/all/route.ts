@@ -2,14 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isWithinServiceArea } from "@/lib/geo-utils";
 import { z } from "zod";
+import type { ApiResponse } from "@/lib/type";
 
 const TOTAL_SLOTS = 5;
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
 
 const bodySchema = z.object({
 	companyId: z.string().min(1, "companyId is required"),

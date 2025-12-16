@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-
-type ApiResponse<T> = {
-	success: boolean;
-	data?: T;
-	error?: string;
-};
+import type { ApiResponse } from "@/lib/type";
 
 export async function GET() {
 	try {
@@ -23,6 +18,15 @@ export async function GET() {
 		});
 	} catch (err) {
 		console.error("Error loading bookings:", err);
+		if (err instanceof z.ZodError) {
+			return NextResponse.json<ApiResponse<null>>(
+				{
+					success: false,
+					error: "Invalid request data",
+				},
+				{ status: 400 }
+			);
+		}
 		return NextResponse.json<ApiResponse<null>>(
 			{
 				success: false,

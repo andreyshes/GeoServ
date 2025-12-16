@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { type ApiResponse } from "@/lib/type";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 	apiVersion: "2025-10-29.clover",
@@ -27,8 +28,8 @@ export async function GET(req: Request) {
 		});
 
 		if (!parseResult.success) {
-			return NextResponse.json(
-				{ error: parseResult.error.format() },
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "Invalid session_id" },
 				{ status: 400 }
 			);
 		}
@@ -41,8 +42,11 @@ export async function GET(req: Request) {
 		// Validate metadata
 		const metaResult = StripeMetaSchema.safeParse(session.metadata);
 		if (!metaResult.success) {
-			return NextResponse.json(
-				{ error: "Invalid or missing bookingId in Stripe metadata" },
+			return NextResponse.json<ApiResponse<null>>(
+				{
+					success: false,
+					error: "Invalid or missing bookingId in Stripe metadata",
+				},
 				{ status: 400 }
 			);
 		}
@@ -56,14 +60,20 @@ export async function GET(req: Request) {
 		});
 
 		if (!booking) {
-			return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+			return NextResponse.json<ApiResponse<null>>(
+				{ success: false, error: "Booking not found" },
+				{ status: 404 }
+			);
 		}
 
-		return NextResponse.json({ success: true, data: booking });
+		return NextResponse.json<ApiResponse<typeof booking>>({
+			success: true,
+			data: booking,
+		});
 	} catch (err) {
 		console.error("Checkout success error:", err);
-		return NextResponse.json(
-			{ error: "Internal server error" },
+		return NextResponse.json<ApiResponse<null>>(
+			{ success: false, error: "Internal server error" },
 			{ status: 500 }
 		);
 	}
