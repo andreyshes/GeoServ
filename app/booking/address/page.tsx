@@ -14,6 +14,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { useCompanyId } from "../CompanyProvider";
+import { MapPin, Search, Mail, Clock, CheckCircle } from "lucide-react";
 
 interface AddressPageProps {
 	companyId?: string;
@@ -23,7 +24,8 @@ interface AddressPageProps {
 export default function AddressPage({
 	companyId,
 	embedded = false,
-}: AddressPageProps= {}) {
+}: AddressPageProps = {}) {
+	// --- (All state and logic remains the same) ---
 	const [address, setAddress] = useState("");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [error, setError] = useState<string | undefined>(undefined);
@@ -41,7 +43,7 @@ export default function AddressPage({
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setError(undefined);
-
+		// ... (rest of handleSubmit logic)
 		try {
 			if (effectiveCompanyId) {
 				sessionStorage.setItem(
@@ -105,10 +107,9 @@ export default function AddressPage({
 			setError("Something went wrong. Please try again.");
 		}
 	}
-
-	// ✅ Autocomplete suggestions
 	async function handleInput(value: string) {
 		setAddress(value);
+
 		if (value.length < 3) {
 			setSuggestions([]);
 			return;
@@ -120,17 +121,17 @@ export default function AddressPage({
 			);
 			const data = await res.json();
 
-			if (data.status === "OK") {
-				setSuggestions(data.predictions.map((p: any) => p.description));
+			if (data.success) {
+				setSuggestions(data.data.map((p: any) => p.description));
 			} else {
 				setSuggestions([]);
 			}
 		} catch (err) {
 			console.error("❌ Autocomplete error:", err);
+			setSuggestions([]);
 		}
 	}
 
-	// ✅ Notify user when out of service area
 	async function handleNotify(e: React.FormEvent) {
 		e.preventDefault();
 		setNotifyLoading(true);
@@ -155,107 +156,146 @@ export default function AddressPage({
 		}
 	}
 
+	// --- UI START ---
+
 	return (
-		<div className="container max-w-xl mx-auto mt-12">
-			<BookingProgress currentStep="address" />
+		<div className="relative min-h-screen w-full overflow-hidden bg-neutral-950 text-white">
+			{/* Full-page ambient gradient (very subtle) */}
+			<div className="pointer-events-none absolute inset-0 bg-linear-to-b from-neutral-900/60 via-neutral-950 to-neutral-950" />
 
-			<Card className="shadow-xl border border-border bg-white/90 backdrop-blur">
-				<CardHeader>
-					<CardTitle className="text-2xl font-semibold">
-						Enter Your Address
-					</CardTitle>
-					<CardDescription>
-						We’ll check if your location is inside our service area.
-					</CardDescription>
-				</CardHeader>
+			<motion.div
+				initial={{ opacity: 0, y: 16 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.45, ease: "easeOut" }}
+				className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center px-4"
+			>
+				{/* Keep progress visually connected to page */}
+				<div className="mb-6 w-full max-w-xl">
+					<BookingProgress currentStep="address" />
+				</div>
 
-				<CardContent>
-					{!error && (
-						<form onSubmit={handleSubmit} className="space-y-6">
-							<div className="relative">
-								<Input
-									value={address}
-									onChange={(e) => handleInput(e.target.value)}
-									placeholder="123 Main St, City"
-									className="pr-3"
-									required
-								/>
-								{suggestions.length > 0 && (
-									<ul className="absolute z-10 mt-2 w-full bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
-										{suggestions.map((s, i) => (
-											<li
-												key={i}
-												onClick={() => {
-													setAddress(s);
-													setSuggestions([]);
-												}}
-												className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm"
-											>
-												{s}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
+				{/* Main surface */}
+				<Card className="w-full max-w-xl rounded-2xl border border-neutral-800 bg-neutral-900/70 p-8 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)] backdrop-blur">
+					<CardHeader className="mb-8 p-0 text-center">
+						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-blue-500/40 bg-blue-500/10">
+							<MapPin className="h-6 w-6 text-blue-400" />
+						</div>
 
-							<Button
-								type="submit"
-								size="lg"
-								className="w-full bg-gray-200 hover:bg-blue-500 hover:text-white transition-all"
-							>
-								{effectiveCompanyId ? "Continue" : "Check Address"}
-							</Button>
-						</form>
-					)}
+						<CardTitle className="text-3xl font-semibold tracking-tight">
+							Service area check
+						</CardTitle>
 
-					{error && !submitted && (
-						<div className="space-y-4">
-							<p className="text-red-600 font-medium">{error}</p>
-							<p className="text-sm text-muted-foreground">
-								Leave your email and we’ll notify you when we expand to your
-								area.
-							</p>
+						<CardDescription className="mt-2 text-sm text-neutral-400">
+							Enter your address to see if GeoServ professionals are available
+							near you.
+						</CardDescription>
+					</CardHeader>
 
-							<form onSubmit={handleNotify} className="space-y-3">
-								<Input
-									type="email"
-									placeholder="you@example.com"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									required
-								/>
+					<CardContent className="p-0">
+						{!error && (
+							<form onSubmit={handleSubmit} className="space-y-6">
+								{/* Address input + autocomplete */}
+								<div className="relative overflow-visible">
+									<Input
+										value={address}
+										onChange={(e) => handleInput(e.target.value)}
+										placeholder="Street address, city"
+										className="h-12 bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500 pl-11"
+										required
+									/>
+									<Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500" />
+
+									{suggestions.length > 0 && (
+										<ul className="absolute z-50 mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-800 shadow-xl max-h-56 overflow-y-auto">
+											{suggestions.map((s, i) => (
+												<li
+													key={i}
+													onClick={() => {
+														setAddress(s);
+														requestAnimationFrame(() => setSuggestions([]));
+													}}
+													className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm hover:bg-neutral-700"
+												>
+													<MapPin className="h-4 w-4 text-blue-400 shrink-0" />
+													<span className="truncate">{s}</span>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+
 								<Button
 									type="submit"
-									disabled={notifyLoading}
-									className="w-full hover:bg-blue-500 hover:text-white transition-all"
+									size="lg"
+									disabled={!address.trim()}
+									className="h-12 w-full bg-blue-600 font-medium hover:bg-blue-500 transition-colors"
 								>
-									{notifyLoading ? "Sending..." : "Notify Me"}
+									{effectiveCompanyId
+										? "Continue to schedule"
+										: "Check availability"}
 								</Button>
-
-								{notifyError && (
-									<p className="text-sm text-red-500">{notifyError}</p>
-								)}
 							</form>
-						</div>
-					)}
+						)}
 
-					{submitted && (
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ duration: 0.4 }}
-							className="text-center space-y-4"
-						>
-							<p className="text-green-600 font-semibold text-lg">
-								Thanks! We’ll let you know when we launch in your area.
-							</p>
-							<p className="text-sm text-muted-foreground">
-								You can safely close this window or tab.
-							</p>
-						</motion.div>
-					)}
-				</CardContent>
-			</Card>
+						{/* Out of service */}
+						{error && !submitted && (
+							<motion.div
+								initial={{ opacity: 0, y: 8 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.25 }}
+								className="space-y-5 rounded-xl border border-red-900/40 bg-red-950/30 p-5"
+							>
+								<p className="text-sm font-medium text-red-400">
+									Out of service area
+								</p>
+								<p className="text-sm text-neutral-300">{error}</p>
+
+								<form onSubmit={handleNotify} className="space-y-4">
+									<div className="relative">
+										<Input
+											type="email"
+											placeholder="Email for updates"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											className="h-11 bg-neutral-800 border-neutral-700 text-white pl-11"
+											required
+										/>
+										<Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+									</div>
+
+									<Button
+										type="submit"
+										disabled={notifyLoading || !email.trim()}
+										variant="secondary"
+										className="w-full h-11"
+									>
+										{notifyLoading ? "Sending…" : "Notify me"}
+									</Button>
+
+									{notifyError && (
+										<p className="text-sm text-red-400">{notifyError}</p>
+									)}
+								</form>
+							</motion.div>
+						)}
+
+						{/* Success */}
+						{submitted && (
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ duration: 0.3 }}
+								className="text-center space-y-4"
+							>
+								<CheckCircle className="mx-auto h-8 w-8 text-green-400" />
+								<p className="text-sm text-neutral-300">
+									We’ll notify you as soon as GeoServ launches in your area.
+								</p>
+							</motion.div>
+						)}
+					</CardContent>
+				</Card>
+			</motion.div>
 		</div>
 	);
 }

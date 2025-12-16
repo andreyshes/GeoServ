@@ -4,10 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import BookingProgress from "@/app/components/BookingProgress";
 import { motion } from "framer-motion";
-import { Briefcase, Loader2 } from "lucide-react";
+import {
+	Briefcase,
+	Loader2,
+	User,
+	Phone,
+	Mail,
+	Clock,
+	MapPin,
+} from "lucide-react";
 import { useCompanyId } from "../CompanyProvider";
 import { LocalTimeDisplay } from "@/app/components/LocalTime";
 
+// --- Type Definitions (Kept as provided) ---
 interface Service {
 	id: string;
 	name: string;
@@ -25,10 +34,29 @@ interface DetailsPageProps {
 	embedded?: boolean;
 }
 
+// --- Component Start ---
+
+// Reusable Input Component for premium look
+const DarkInput = ({
+	icon: Icon,
+	...props
+}: {
+	icon: React.ElementType;
+} & React.InputHTMLAttributes<HTMLInputElement>) => (
+	<div className="relative">
+		<Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500" />
+		<input
+			{...props}
+			className="w-full bg-neutral-800 border border-neutral-700 text-white placeholder-neutral-500 pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all text-base"
+		/>
+	</div>
+);
+
 export default function DetailsPage({
 	companyId,
 	embedded = false,
 }: DetailsPageProps = {}) {
+	// --- STATE & ROUTER (Logic Kept as is) ---
 	const [form, setForm] = useState({
 		first: "",
 		last: "",
@@ -53,6 +81,7 @@ export default function DetailsPage({
 	const day = params.get("day");
 	const slot = params.get("slot");
 
+	// --- useEffect for Address Validation (Logic Kept as is) ---
 	useEffect(() => {
 		const saved = sessionStorage.getItem("validatedAddress");
 		if (!saved) {
@@ -69,6 +98,7 @@ export default function DetailsPage({
 		}
 	}, [router]);
 
+	// --- useEffect for Service Fetching (Logic Kept as is) ---
 	useEffect(() => {
 		if (!effectiveCompanyId) return;
 		let isMounted = true;
@@ -100,12 +130,15 @@ export default function DetailsPage({
 		};
 	}, [effectiveCompanyId]);
 
+	// --- Handlers and Submit (Logic Kept as is) ---
 	function handleChange(
 		e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 	) {
 		setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 	}
 
+	// NOTE: The parseTime function is complex and essential for the logic,
+	// so it's kept exactly as is.
 	function parseTime(timeStr: string, baseDate: Date): Date | null {
 		const match = timeStr.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM|am|pm)?$/);
 		if (!match) return null;
@@ -145,7 +178,7 @@ export default function DetailsPage({
 
 		const [startTimeRaw] = slot.split("–") || ["00:00"];
 		const startTimeStr = startTimeRaw.trim();
-		const localDate = new Date(day.replace(/-/g, "/"));
+		const localDate = new Date(day!.replace(/-/g, "/"));
 		const parsedDate = parseTime(startTimeStr, localDate);
 		if (!parsedDate) {
 			alert("Could not determine the booking time. Please try again.");
@@ -199,109 +232,178 @@ export default function DetailsPage({
 		}
 	}
 
+	// --- LOADING/ERROR STATES (Updated UI) ---
 	if (loading)
 		return (
-			<div className="flex items-center justify-center py-12 text-gray-500">
-				<Loader2 className="w-5 h-5 animate-spin mr-2" />
-				Loading services...
+			<div className="min-h-[400px] flex items-center justify-center text-white/70 bg-neutral-950">
+				<Loader2 className="w-6 h-6 animate-spin mr-3 text-blue-500" />
+				<span className="text-lg">Loading services and data structure...</span>
 			</div>
 		);
 
 	if (error)
 		return (
-			<div className="text-center py-12 text-red-500 font-medium">
-				Failed to load services: {error}
+			<div className="text-center py-12 text-red-400 bg-neutral-900 border border-red-900/50 rounded-xl max-w-lg mx-auto mt-12">
+				<p className="font-medium text-lg">System Error</p>
+				<p className="text-sm">Failed to load services: {error}</p>
 			</div>
 		);
 
+	// --- RENDER FORM (Premium Dark UI) ---
 	return (
-		<form
-			onSubmit={handleSubmit}
-			className="max-w-2xl mx-auto mt-12 px-6 py-8 bg-white/80 backdrop-blur-md border border-gray-200 shadow-lg rounded-2xl"
-		>
-			<BookingProgress currentStep="details" />
+		<div className="min-h-screen bg-neutral-950 text-white p-4 sm:p-8 flex flex-col items-center pt-16">
+			{/* Background gradient for depth */}
+			<div className="absolute inset-0 z-0 opacity-15 bg-[radial-gradient(45%_35%_at_50%_40%,var(--tw-color-blue-900)_0%,transparent_100%)]" />
 
-			<div className="text-center mb-6">
-				<h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-400 bg-clip-text text-transparent">
-					Your Details
-				</h2>
-
-				<p className="text-gray-500 text-sm mt-2">
-					Scheduled for{" "}
-					<span className="font-semibold text-gray-800">
-						<LocalTimeDisplay day={day} slot={slot} />
-					</span>
-				</p>
-			</div>
-
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-				<input
-					name="first"
-					placeholder="First Name"
-					onChange={handleChange}
-					required
-					className="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-				/>
-				<input
-					name="last"
-					placeholder="Last Name"
-					onChange={handleChange}
-					required
-					className="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-				/>
-			</div>
-
-			<input
-				name="phone"
-				placeholder="Phone"
-				onChange={handleChange}
-				required
-				className="w-full mb-3 border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-			/>
-
-			<input
-				name="email"
-				type="email"
-				placeholder="Email"
-				onChange={handleChange}
-				required
-				className="w-full mb-4 border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-			/>
-
-			<div className="mb-6">
-				<label className="block text-sm font-medium text-gray-600 mb-2">
-					Select a Service
-				</label>
-
-				{services.length === 0 ? (
-					<p className="text-gray-400 italic">No services available.</p>
-				) : (
-					<motion.select
-						name="service"
-						required
-						onChange={handleChange}
-						className="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-						whileFocus={{ scale: 1.01 }}
-					>
-						<option value="">Choose a service</option>
-						{services.map((s) => (
-							<option key={s.id} value={s.name}>
-								{s.name} — ${(s.priceCents / 100).toFixed(2)} ({s.durationText})
-							</option>
-						))}
-					</motion.select>
-				)}
-			</div>
-
-			<motion.button
-				type="submit"
-				whileHover={{ scale: 1.02 }}
-				whileTap={{ scale: 0.97 }}
-				className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold py-3 rounded-xl shadow hover:shadow-md transition"
+			<motion.form
+				onSubmit={handleSubmit}
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.5 }}
+				className="relative z-10 w-full max-w-2xl mx-auto bg-neutral-900 border border-white/10 shadow-2xl rounded-2xl p-6 sm:p-8"
 			>
-				<Briefcase className="h-5 w-5" />
-				Continue to Payment
-			</motion.button>
-		</form>
+				<BookingProgress currentStep="details" />
+
+				{/* Header and Summary Panel */}
+				<div className="mb-8 border-b border-neutral-700 pb-6">
+					<h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+						Confirm Your Contact Information
+					</h2>
+					<p className="text-neutral-400 text-lg">
+						Final step before securing your professional.
+					</p>
+
+					{/* Summary Box (Key Information) */}
+					<div className="mt-4 bg-neutral-800 border border-neutral-700 rounded-lg p-4 text-sm font-medium">
+						<div className="flex justify-between items-center text-blue-400 mb-1">
+							<span className="flex items-center gap-2">
+								<Clock className="h-4 w-4" /> SERVICE TIME:
+							</span>
+							<span className="text-white font-semibold">
+								<LocalTimeDisplay day={day} slot={slot} />
+							</span>
+						</div>
+						<div className="flex justify-between items-start text-neutral-500">
+							<span className="flex items-center gap-2 pt-1">
+								<MapPin className="h-4 w-4" /> LOCATION:
+							</span>
+							<span className="text-white text-right max-w-[60%] pt-1">
+								{validatedAddress?.address || "Address loading..."}
+							</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Contact Details Section */}
+				<h3 className="text-xl font-semibold text-neutral-300 mb-4">
+					Your Contact Information
+				</h3>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+					<DarkInput
+						name="first"
+						placeholder="First Name"
+						onChange={handleChange}
+						required
+						icon={User}
+					/>
+					<DarkInput
+						name="last"
+						placeholder="Last Name"
+						onChange={handleChange}
+						required
+						icon={User}
+					/>
+				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+					<DarkInput
+						name="phone"
+						placeholder="Phone Number"
+						onChange={handleChange}
+						required
+						icon={Phone}
+						type="tel"
+					/>
+					<DarkInput
+						name="email"
+						placeholder="Email Address"
+						onChange={handleChange}
+						required
+						icon={Mail}
+						type="email"
+					/>
+				</div>
+
+				{/* Service Selection Section */}
+				<h3 className="text-xl font-semibold text-neutral-300 mb-4 pt-4 border-t border-neutral-800">
+					Service Selection
+				</h3>
+
+				<div className="mb-8">
+					{services.length === 0 ? (
+						<p className="text-neutral-500 italic p-4 bg-neutral-800 rounded-lg">
+							No services configured for this provider.
+						</p>
+					) : (
+						<div className="relative">
+							<Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500 pointer-events-none" />
+							<motion.select
+								name="service"
+								required
+								onChange={handleChange}
+								className="w-full bg-neutral-800 border border-neutral-700 text-white pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all text-base appearance-none"
+								whileFocus={{ scale: 1.01 }}
+							>
+								<option value="" disabled className="text-neutral-500">
+									--- Choose a service ---
+								</option>
+								{services.map((s) => (
+									<option
+										key={s.id}
+										value={s.name}
+										className="bg-neutral-800 text-white"
+									>
+										{s.name} — ${(s.priceCents / 100).toFixed(2)} (
+										{s.durationText})
+									</option>
+								))}
+							</motion.select>
+							<svg
+								className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500 pointer-events-none"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M19 9l-7 7-7-7"
+								/>
+							</svg>
+						</div>
+					)}
+				</div>
+
+				{/* Submit Button */}
+				<motion.button
+					type="submit"
+					whileHover={{ scale: 1.02 }}
+					whileTap={{ scale: 0.98 }}
+					disabled={!form.service}
+					className={`w-full flex items-center justify-center gap-3 font-semibold py-4 rounded-xl shadow-lg transition-all text-lg
+                    ${
+											!form.service
+												? "bg-neutral-600 text-neutral-400 cursor-not-allowed shadow-neutral-700/30"
+												: "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-500/30"
+										}
+                `}
+				>
+					<Briefcase className="h-5 w-5" />
+					Proceed to Payment
+				</motion.button>
+			</motion.form>
+		</div>
 	);
 }

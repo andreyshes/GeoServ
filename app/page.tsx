@@ -228,7 +228,7 @@ export default function HomePage() {
 						<div className="relative z-10 rounded-xl border border-white/10 bg-[#0A0A0A] overflow-hidden shadow-2xl">
 							<div className="relative h-[550px] w-full bg-neutral-950 flex items-center justify-center overflow-hidden rounded-xl">
 								<Image
-									src="/mockup.png"
+									src="/images/geoserv-landing.png"
 									alt="GeoServ mockup"
 									fill
 									className="object-cover"

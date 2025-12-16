@@ -27,7 +27,7 @@ export default function BookingProgress({
 
 			<div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
 				<div
-					className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+					className="h-full bg-linear-to-r from-blue-500 to-cyan-500 transition-all duration-500"
 					style={{ width: `${progress}%` }}
 				/>
 			</div>

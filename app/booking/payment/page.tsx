@@ -93,45 +93,60 @@ export default function PaymentPage({
 	}
 
 	return (
-		<div className="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl border border-gray-100">
-			<BookingProgress currentStep="payment" />
+		<div className="min-h-screen flex items-center justify-center px-4">
+			<div className="w-full max-w-2xl">
+				<BookingProgress currentStep="payment" />
 
-			<h2 className="text-3xl font-semibold mb-6 text-center bg-gradient-to-r from-neutral-900 via-gray-700 to-gray-500 dark:from-gray-100 dark:via-gray-300 dark:to-gray-100 bg-clip-text text-transparent">
-				Complete Your Booking
-			</h2>
+				<div className="mt-8 rounded-2xl border border-white/10 bg-neutral-900/80 backdrop-blur-xl shadow-2xl shadow-black/40 p-8">
+					{/* Header */}
+					<div className="text-center mb-10">
+						<h2 className="text-3xl font-semibold tracking-tight text-white">
+							Complete your booking
+						</h2>
+						<p className="mt-2 text-neutral-400">
+							Choose how you’d like to pay for your appointment.
+						</p>
+					</div>
 
-			<p className="text-center text-gray-500 mb-8">
-				Choose how you'd like to pay for your appointment.
-			</p>
+					{/* Payment options */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						{/* Pay now */}
+						<button
+							onClick={handlePayNow}
+							disabled={loading}
+							className="group rounded-xl border border-blue-500/30 bg-linear-to-b from-blue-600 to-blue-700 px-6 py-5 text-center text-white transition-all hover:from-blue-500 hover:to-blue-600 hover:shadow-lg hover:shadow-blue-600/30 disabled:opacity-60"
+						>
+							<span className="block text-lg font-semibold">
+								{loading ? "Processing…" : "Pay now"}
+							</span>
 
-			<div className="flex flex-col sm:flex-row gap-4">
-				<button
-					onClick={handlePayNow}
-					disabled={loading}
-					className={`flex-1 py-3 rounded-lg text-white font-medium transition-all ${
-						loading
-							? "bg-blue-400 cursor-not-allowed"
-							: "bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md"
-					}`}
-				>
-					{loading ? "Processing..." : "Pay Now"}
-					<p className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
-						<Lock className="w-3 h-3" /> Securely processed by Stripe
+							<span className="mt-1 flex items-center justify-center gap-1 text-xs text-blue-100 opacity-90">
+								<Lock className="h-3 w-3" />
+								Secure checkout powered by Stripe
+							</span>
+						</button>
+
+						{/* Pay later */}
+						<button
+							onClick={handlePayOnArrival}
+							disabled={loading}
+							className="rounded-xl border border-white/10 bg-neutral-800 px-6 py-5 text-center text-white transition-all hover:bg-neutral-700 hover:shadow-md hover:shadow-black/30 disabled:opacity-60"
+						>
+							<span className="block text-lg font-semibold">
+								Pay on arrival
+							</span>
+
+							<span className="mt-1 block text-xs text-neutral-400">
+								Pay directly to the provider after service
+							</span>
+						</button>
+					</div>
+
+					<p className="mt-8 text-center text-xs text-neutral-500">
+						Payments are securely processed through Stripe.
 					</p>
-				</button>
-
-				<button
-					onClick={handlePayOnArrival}
-					disabled={loading}
-					className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-medium transition-all border border-gray-300 disabled:opacity-70"
-				>
-					Pay on Arrival
-				</button>
+				</div>
 			</div>
-
-			<p className="text-center text-sm text-gray-400 mt-6">
-				Payments are securely processed through Stripe.
-			</p>
 		</div>
 	);
 }

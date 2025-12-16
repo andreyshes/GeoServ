@@ -124,8 +124,8 @@ export async function POST(req: Request) {
 		>({
 			success: true,
 			data: {
-				availableDays,
-				fullyBookedDays,
+				availableDays: availableDays,
+				fullyBookedDays: fullyBookedDays,
 				areas: matchingAreas.map((a: ServiceAreaType) => ({
 					id: a.id,
 					name: a.name,

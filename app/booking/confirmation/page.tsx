@@ -1,22 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, ExternalLink } from "lucide-react";
+import { CheckCircle2, Loader2, ExternalLink, Home } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-	Card,
-	CardHeader,
-	CardContent,
-	CardTitle,
-} from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
+import { motion } from "framer-motion";
+// Using base HTML elements for the card structure to ensure full control over dark theme
 import { useCompanyId } from "../CompanyProvider";
-import BookingProgress from "@/app/components/BookingProgress";
 
 interface ConfirmationPageProps {
 	companyId?: string;
 	embedded?: boolean;
 }
+
+// Custom Component for a Detail Row (Premium Look)
+const DetailRow = ({
+	label,
+	value,
+	className = "",
+}: {
+	label: string;
+	value: React.ReactNode;
+	className?: string;
+}) => (
+	<div
+		className={`flex justify-between border-b border-neutral-700 py-3 ${className}`}
+	>
+		<span className="text-neutral-400 font-medium">{label}</span>
+		<span className="text-white font-semibold">{value}</span>
+	</div>
+);
 
 export default function ConfirmationPage({
 	companyId,
@@ -34,6 +46,7 @@ export default function ConfirmationPage({
 	const [booking, setBooking] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
 
+	// --- LOGIC (Kept as is) ---
 	useEffect(() => {
 		async function fetchBooking() {
 			if (!bookingId) {
@@ -45,8 +58,12 @@ export default function ConfirmationPage({
 			try {
 				const res = await fetch(`/api/booking/${bookingId}`);
 				const data = await res.json();
-				console.log("📦 Booking data:", data);
-				setBooking(data.booking || data);
+
+				if (!data.success) {
+					throw new Error(data.error || "Failed to load booking");
+				}
+
+				setBooking(data.data.booking);
 			} catch (err) {
 				console.error("❌ Failed to fetch booking:", err);
 			} finally {
@@ -57,107 +74,138 @@ export default function ConfirmationPage({
 		fetchBooking();
 	}, [bookingId]);
 
+	const homeUrl =
+		embedded && effectiveCompanyId ? `/embed/${effectiveCompanyId}` : "/";
+
+	// --- LOADING STATE (Premium Look) ---
 	if (loading) {
 		return (
-			<div className="flex flex-col items-center justify-center py-24 text-gray-600">
-				<Loader2 className="animate-spin w-8 h-8 mb-4" />
-				<p>Loading your booking details...</p>
+			<div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center py-24 text-white/70">
+				<Loader2 className="animate-spin w-8 h-8 mb-4 text-blue-500" />
+				<p className="text-lg">Finalizing your secure booking details...</p>
 			</div>
 		);
 	}
 
+	// --- NOT FOUND STATE (Premium Look) ---
 	if (!booking) {
 		return (
-			<div className="flex flex-col items-center justify-center py-24 text-gray-600">
-				<p>Booking not found.</p>
-				<Button
-					variant="outline"
-					className="mt-4"
-					onClick={() => {
-						const homeUrl =
-							embedded && effectiveCompanyId
-								? `/embed/${effectiveCompanyId}`
-								: "/";
-						router.push(homeUrl);
-					}}
+			<div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center py-24 text-white">
+				<p className="text-xl mb-6">
+					Booking record not found or inaccessible.
+				</p>
+				<button
+					className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/30"
+					onClick={() => router.push(homeUrl)}
 				>
-					Back to Home
-				</Button>
+					<Home className="w-5 h-5" />
+					Back to GeoServ Home
+				</button>
 			</div>
 		);
 	}
 
+	// --- CONFIRMED STATE (Premium Look) ---
+	const isPaid = booking.paid || paidParam;
+
 	return (
-		<section className="flex flex-col items-center justify-center py-20 px-4">
-			<CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
-			<h1 className="text-3xl font-bold mb-2">Booking Confirmed!</h1>
+		<section className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center py-20 px-4">
+			<motion.div
+				initial={{ opacity: 0, scale: 0.8 }}
+				animate={{ opacity: 1, scale: 1 }}
+				transition={{ duration: 0.4 }}
+				className="relative z-10 w-full max-w-xl mx-auto"
+			>
+				<div className="bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl shadow-blue-900/40 p-8 sm:p-10">
+					{/* Confirmation Header */}
+					<div className="text-center mb-8">
+						<CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+						<h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
+							Booking Secured!
+						</h1>
 
-			<p className="text-gray-600 mb-8 text-center max-w-md">
-				Thanks for booking with{" "}
-				<strong>{booking.company?.name || "our partner company"}</strong>. We’ve
-				sent a confirmation email to{" "}
-				<strong>{booking.customer?.email || "your inbox"}</strong>.
-			</p>
+						<p className="text-neutral-400 mb-6 text-center text-lg">
+							Your service is confirmed with{" "}
+							<strong className="text-blue-400">
+								{booking.company?.name || "our trusted partner"}
+							</strong>
+							.
+						</p>
 
-			<Card className="w-full max-w-lg shadow-lg border border-border bg-white/90 backdrop-blur-md">
-				<CardHeader>
-					<CardTitle className="text-lg font-semibold text-gray-800">
-						Booking Details
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-3 text-gray-700">
-					<p>
-						<strong>Service:</strong> {booking.serviceType}
-					</p>
-					<p>
-						<strong>Date:</strong>{" "}
-						{new Date(booking.date).toLocaleDateString(undefined, {
-							dateStyle: "medium",
-						})}
-					</p>
-					<p>
-						<strong>Time Slot:</strong> {booking.slot}
-					</p>
-					<p>
-						<strong>Status:</strong>
-						<span
-							className={`ml-2 font-medium ${
-								booking.paid || paidParam ? "text-green-600" : "text-orange-500"
-							}`}
-						>
-							{booking.paid || paidParam ? "Paid" : "Pending Payment"}
-						</span>
-					</p>
+						<p className="text-sm text-neutral-500 max-w-md mx-auto">
+							A detailed receipt and confirmation link has been delivered to{" "}
+							<strong className="text-white">
+								{booking.customer?.email || "your inbox"}
+							</strong>
+							.
+						</p>
+					</div>
 
-					{booking.paymentReceiptUrl && (
-						<div className="pt-6">
+					{/* Booking Details Card (High Contrast) */}
+					<div className="bg-neutral-800 border border-neutral-700 rounded-xl p-6">
+						<h2 className="text-xl font-bold text-white mb-4 border-b border-neutral-700 pb-3">
+							Appointment Summary
+						</h2>
+
+						{/* Detail Rows */}
+						<DetailRow
+							label="Booking ID"
+							value={
+								<code className="bg-neutral-900 px-2 py-1 rounded text-sm">
+									{bookingId || "N/A"}
+								</code>
+							}
+						/>
+						<DetailRow label="Service Type" value={booking.serviceType} />
+						<DetailRow
+							label="Date"
+							value={new Date(booking.date).toLocaleDateString(undefined, {
+								dateStyle: "medium",
+							})}
+						/>
+						<DetailRow label="Time Slot" value={booking.slot} />
+
+						<DetailRow
+							label="Payment Status"
+							value={
+								<span
+									className={`font-bold ${isPaid ? "text-green-400" : "text-orange-400"}`}
+								>
+									{isPaid ? "Payment Received" : "Pending Action"}
+								</span>
+							}
+							className="border-b-0"
+						/>
+					</div>
+
+					{/* Action Buttons */}
+					<div className="mt-8 flex flex-col sm:flex-row gap-4">
+						{isPaid && booking.paymentReceiptUrl && (
 							<a
 								href={booking.paymentReceiptUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+								className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white font-semibold shadow-lg shadow-green-500/30 hover:bg-green-500 transition-all duration-200"
 							>
-								View Payment Receipt
-								<ExternalLink className="w-4 h-4 opacity-80" />
+								<ExternalLink className="w-5 h-5" />
+								View/Print Receipt
 							</a>
-						</div>
-					)}
-				</CardContent>
-			</Card>
+						)}
 
-			<Button
-				variant="outline"
-				className="mt-10"
-				onClick={() => {
-					const homeUrl =
-						embedded && effectiveCompanyId
-							? `/embed/${effectiveCompanyId}`
-							: "/";
-					router.push(homeUrl);
-				}}
-			>
-				Back to Home
-			</Button>
+						<button
+							className={`flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+								isPaid && booking.paymentReceiptUrl
+									? "bg-neutral-700 text-white hover:bg-neutral-600"
+									: "bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/30"
+							}`}
+							onClick={() => router.push(homeUrl)}
+						>
+							<Home className="w-5 h-5" />
+							{isPaid && booking.paymentReceiptUrl ? "Close" : "Back to Home"}
+						</button>
+					</div>
+				</div>
+			</motion.div>
 		</section>
 	);
 }

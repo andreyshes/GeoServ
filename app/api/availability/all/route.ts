@@ -73,10 +73,13 @@ export async function POST(req: Request) {
 		}
 
 		return NextResponse.json<
-			ApiResponse<{ avaliableDays: string[]; fullyBooked: string[] }>
+			ApiResponse<{ availableDays: string[]; fullyBooked: string[] }>
 		>({
 			success: true,
-			error: "invalid request data",
+			data: {
+				availableDays,
+				fullyBooked,
+			},
 		});
 	} catch (err) {
 		if (err instanceof z.ZodError) {
