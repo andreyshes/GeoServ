@@ -11,9 +11,6 @@ import {
 	CheckCircle2,
 	Zap,
 	ChevronRight,
-	LayoutDashboard,
-	DollarSign,
-	Users,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -139,8 +136,6 @@ const LogoTicker = () => (
 	</div>
 );
 
-// --- MAIN PAGE ---
-
 export default function HomePage() {
 	return (
 		<div className="min-h-screen bg-[#030303] text-neutral-200 font-sans selection:bg-blue-500/30 selection:text-blue-200 relative">
@@ -182,7 +177,7 @@ export default function HomePage() {
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.5, delay: 0.1 }}
-						className="text-5xl md:text-8xl font-bold tracking-tighter bg-clip-text text-transparent bg-[linear-gradient(to_bottom,white_0%,white_50%,neutral-500_100%)] mb-8 leading-[1.1] max-w-5xl mx-auto"
+						className="text-5xl md:text-8xl font-bold tracking-tighter bg-clip-text text-transparent bg-linear-to-b from-white via-white to-neutral-500 mb-8 leading-[1.1] max-w-5xl mx-auto"
 					>
 						Local services. <br />
 						<span className="text-white/40">Reinvented.</span>
@@ -226,7 +221,7 @@ export default function HomePage() {
 
 						{/* Mockup container */}
 						<div className="relative z-10 rounded-xl border border-white/10 bg-[#0A0A0A] overflow-hidden shadow-2xl">
-							<div className="relative h-[550px] w-full bg-neutral-950 flex items-center justify-center overflow-hidden rounded-xl">
+							<div className="relative w-full aspect-video md:aspect-5/3 lg:aspect-video bg-neutral-950 flex items-center justify-center overflow-hidden rounded-xl">
 								<Image
 									src="/images/geoserv-landing.png"
 									alt="GeoServ mockup"
@@ -509,7 +504,6 @@ export default function HomePage() {
 				</div>
 			</footer>
 
-			{/* CSS for marquee and fixing missing custom gradients/animations */}
 			<style jsx global>{`
 				@keyframes marquee {
 					0% {
