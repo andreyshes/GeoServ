@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { ApiResponse } from "@/lib/type";
 
 const updateSchema = z.object({
-	companyId: z.cuid(),
+	companyId: z.uuid(),
 	name: z.string().trim().min(1).max(100).optional(),
 	address: z.string().trim().min(5).max(200).nullable().optional(),
 	addressLat: z.number().min(-90).max(90).nullable().optional(),

@@ -22,9 +22,6 @@ function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-// --- CORE COMPONENTS (REUSED) ---
-
-// Spotlight Card Component (The high-end interactive card)
 const SpotlightCard = ({
 	children,
 	className = "",
@@ -114,14 +111,12 @@ const businessFeatures = [
 export default function BusinessPage() {
 	return (
 		<div className="min-h-screen bg-[#030303] text-neutral-200 font-sans overflow-x-hidden pt-20">
-			{/* Background and Grain */}
 			<div className="fixed inset-0 pointer-events-none -z-20">
-				<div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+				<div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 				{/* Subtle moving glows */}
 				<div className="absolute left-0 top-[20%] w-[600px] h-[350px] bg-green-500/10 blur-[150px] rounded-full animate-pulse-slow" />
 				<div className="absolute right-0 bottom-[10%] w-[500px] h-[300px] bg-blue-500/10 blur-[150px] rounded-full" />
 			</div>
-
 
 			<section className="pt-24 pb-16 md:pt-36 md:pb-24 px-6 text-center max-w-6xl mx-auto relative z-10">
 				<motion.div
@@ -132,7 +127,7 @@ export default function BusinessPage() {
 					<span className="inline-block px-3 py-1 mb-4 text-xs font-semibold uppercase tracking-widest rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">
 						Grow Your Service
 					</span>
-					<h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-400 mb-6 leading-tight">
+					<h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white to-neutral-400 mb-6 leading-tight">
 						Modernize Your Business.
 						<br className="hidden md:inline" /> Secure Higher Quality Leads.
 					</h1>
@@ -158,7 +153,6 @@ export default function BusinessPage() {
 				</motion.div>
 			</section>
 
-			{/* VALUE PROPOSITIONS GRID */}
 			<section className="py-16 md:py-24 px-6">
 				<div className="max-w-7xl mx-auto">
 					<motion.h2
@@ -199,7 +193,6 @@ export default function BusinessPage() {
 				</div>
 			</section>
 
-			{/* JOIN PROCESS CTA */}
 			<section className="py-16 md:py-24 px-6">
 				<div className="max-w-5xl mx-auto text-center p-12 rounded-3xl border border-white/10 bg-neutral-900 relative overflow-hidden shadow-2xl shadow-black/30">
 					<div className="absolute inset-0 bg-blue-500/5 opacity-10 blur-3xl rounded-full animate-pulse-slowest" />
