@@ -75,7 +75,7 @@ model Booking {
   status                  String   @default("pending")
   paid                    Boolean  @default(false)
   amountCents             Int?
-  paymentId               String?
+  paymentId               String?  @unique
   paymentReceiptUrl       String?
   createdAt               DateTime @default(now())
   addressLat              Float?

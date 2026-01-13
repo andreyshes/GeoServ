@@ -169,6 +169,8 @@ export async function POST(req: Request) {
 			include: { customer: true, company: true },
 		});
 
+		console.log("💰 paymentMethod value:", paymentMethod);
+
 		if (paymentMethod === "arrival") {
 			await db.booking.update({
 				where: { id: booking.id },
@@ -216,6 +218,52 @@ export async function POST(req: Request) {
 		console.error("❌ Booking creation failed:", err);
 		return NextResponse.json(
 			{ error: err.message || "Internal server error" },
+			{ status: 500 }
+		);
+	}
+}
+export async function PATCH(req: Request) {
+	try {
+		const { bookingId } = await req.json();
+
+		if (!bookingId) {
+			return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
+		}
+
+		// Mark booking confirmed (pay on arrival)
+		const booking = await db.booking.update({
+			where: { id: bookingId },
+			data: { status: "confirmed" },
+			include: { customer: true, company: true },
+		});
+
+		// Send confirmation email
+		await resend.emails.send({
+			from: "GeoServ <notify@geoserv.org>",
+			to: booking.customer.email,
+			subject: `Your ${booking.company?.name || "GeoServ"} Booking Confirmation`,
+			react: BookingConfirmationEmail({
+				name: booking.customer.firstName,
+				company: booking.company?.name || "GeoServ",
+				service: booking.serviceType,
+				date: new Date(booking.date).toLocaleDateString(undefined, {
+					month: "long",
+					day: "numeric",
+					year: "numeric",
+				}),
+				slot: booking.slot,
+				ref: booking.id,
+				receiptUrl: undefined,
+			}),
+		});
+
+		console.log(`📧 Arrival confirmation email sent for ${booking.id}`);
+
+		return NextResponse.json({ success: true });
+	} catch (err) {
+		console.error("❌ Arrival confirmation failed:", err);
+		return NextResponse.json(
+			{ error: "Failed to confirm booking" },
 			{ status: 500 }
 		);
 	}

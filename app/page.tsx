@@ -200,16 +200,17 @@ export default function HomePage() {
 						transition={{ duration: 0.5, delay: 0.3 }}
 						className="flex flex-col sm:flex-row justify-center gap-4 items-center"
 					>
-						<Button
-							variant="secondary"
-							icon={Briefcase}
-							className="h-12 px-8 text-base w-full sm:w-auto"
-						>
-							For Business
-						</Button>
+						<Link href={"/auth/register"}>
+							<Button
+								variant="secondary"
+								icon={Briefcase}
+								className="h-12 px-8 text-base w-full sm:w-auto"
+							>
+								For Business
+							</Button>
+						</Link>
 					</motion.div>
 
-					{/* Hero Visual: Professional Dashboard Mockup (FIXED GRADIENTS) */}
 					<motion.div
 						initial={{ opacity: 0, scale: 0.95, y: 40 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}

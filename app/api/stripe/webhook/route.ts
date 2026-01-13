@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { db } from "@/lib/db";
 import { Resend } from "resend";
 import BookingConfirmationEmail from "@/app/emails/BookingConfirmationEmail";

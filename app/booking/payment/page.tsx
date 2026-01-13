@@ -70,23 +70,24 @@ export default function PaymentPage({
 
 			const booking = JSON.parse(bookingData);
 
+			const res = await fetch("/api/booking", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ bookingId: booking.id }),
+			});
+
+			if (!res.ok) {
+				throw new Error("Failed to confirm booking");
+			}
+
 			const query = new URLSearchParams({
 				paid: "false",
 				bookingId: booking.id,
 			});
 
-			if (embedded) {
-				query.set("step", "confirmation");
-				const target = effectiveCompanyId
-					? `/embed/${effectiveCompanyId}?${query.toString()}`
-					: `?${query.toString()}`;
-				router.push(target);
-			} else {
-				if (effectiveCompanyId) query.append("companyId", effectiveCompanyId);
-				router.push(`/booking/confirmation?${query.toString()}`);
-			}
-		} catch (err: any) {
-			alert(err.message || "Something went wrong.");
+			if (effectiveCompanyId) query.append("companyId", effectiveCompanyId);
+			router.push(`/booking/confirmation?${query.toString()}`);
+		} catch (err) {
 			console.error("❌ Pay on Arrival error:", err);
 			setLoading(false);
 		}

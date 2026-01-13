@@ -94,7 +94,7 @@ export default function Navbar({ user: initialUser }: { user: any }) {
 					<nav className="hidden md:flex items-center gap-8">
 						<Link
 							href="/business"
-							className="text-sm font-medium text-neutral-400 hover:text-black  transition-colors dark:hover:text-white"
+							className="text-sm font-medium text-neutral-400 hover:text-black  transition-colors"
 						>
 							For Business
 						</Link>
